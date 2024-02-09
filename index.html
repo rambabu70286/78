@@ -1,0 +1,2964 @@
+<html>
+    <hend>
+        <title>Pl programming</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+        <link rel="stylesheet" href="style.css">
+    </hend>
+    <body>
+        <pre>
+        <p>. HEAP(pheap,128K,ANY,FREE,8,0)</p>
+        <p>.IBSTACK(8,0,FREE)</p>
+<p>. THREADHEAP(8,0,ANY,FREE)</p>
+<p>. STORAGE(,,,0)</p>
+<p>. ALL31(ON)</p>
+<p>. TRAP(OFF)</p>
+<p>. INTERRUPT(OFF)</p>
+<p>. NOTEST(ALL,*,*)</p>
+<p>. MSGQ(1)</p>
+<p>. PLITASKCOUNT(1)</p><br>
+        <p>Refer to the z/OS Language Environment library for more information about these
+options.</p>
+        <h2>PSTACK and PHEAP</h2>
+        <p>The STACK and HEAP storage values are set using the PSTACK and PHEAP
+keywords of the HLLENV command. The initial values for PSTACK and PHEAP
+are 131072 bytes each. These values can be changed dynamically with the
+HLLENV command</p><br>
+        <p>The following example shows how to override the initial values for PSTACK and
+PHEAP for a PL/I program that requests to run in a preinitialized environment:
+HLLENV CHANGE,PSTACK=262144,PHEAP=524288,TYPE=IBMADPLI</p>
+        <h2>LEOPTS static external variable</h2>
+        <p>When your program uses the DSIEXAPP interface module and explicitly forces
+non-preinitialization through the combination of the HLLENV DEFAULT value and
+the HLLOPTS bits, you can specify the runtime options using the LEOPTS static
+external variable.</p><br>
+        <p>When you define LEOPTS in your program, the runtime options specified are used
+instead of those described in “z/OS Language Environment preinitialization
+            defaults” on page 50 and “PSTACK and PHEAP.”</p>
+        <p>For example, you can override the default z/OS Language Environment
+preinitialization, PSTACK, and PHEAP runtime options in a PL/I program as
+shown in the following LEOPTS declaration.</p>
+<p>DCL LEOPTS CHAR(255) STATIC EXTERNAL INIT((
+’STACK(256K,256K,ANY,FREE) HEAP(256K,512K,ANY,FREE,8,0) TRAP(OFF) MSGQ(1)’ ||
+’ BELOWHEAP(8,0,FREE) LIBSTACK(8,0,FREE) THREADHEAP(8,0,ANY,FREE)’ ||
+’ INTERRUPT(OFF) NOTEST(ALL,*,* ) STORAGE(,,,0) ALL31(ON)’ ||
+’ PLITASKCOUNT(1)’));</p>
+        <h2>Parameters passed to HLL Service routines</h2>
+        <p>Four types of parameters can be passed to HLL service routines. Each parameter, as described in Chapter 11, “Service reference,” on page 173, falls into one of four
+            categories:</p><p> v Pointer variables</p>
+        <p>v Integer variables</p>
+        <p>v Fixed-length character strings</p>
+<p>v Varying length character strings</p>
+        <br><br>
+        <h3>Coding PL/I Programs</h3>
+        <p>A discussion of each parameter type follows. The sections describe how you can
+declare, initialize, and pass each parameter type to the HLL service routines. This
+            chapter provides examples for writing HLL programs in PL/I.</p>
+<p>Note: These examples are not complete. They are included to emphasize how you
+might declare, initialize, and pass the HLL service routine parameters. For
+complete examples of user-written HLL programs, refer to the HLL samples
+shipped with the NetView program, or see Appendix B, “PL/I samples,” on page
+271.</p>
+        <h2>Pointer variables</h2>
+        <p>A pointer variable is a 4-byte pointer field containing an address. All HLL service
+routines require at least one argument called HLBPTR. The NetView program
+calculates the value of HLBPTR and passes it to a PL/I HLL command processor
+or installation exit. Therefore, HLBPTR must be declared only in PL/I. Do not
+assign a value to the HLBPTR variable. This is the only parameter of this type that
+            you do not have to assign.</p>
+<p>Note: You do not need to specify the HLBPTR parameter when coding the HLL
+service routine invocation in the PL/I macro format. HLBPTR is inserted for you
+    before the HLL service routine is started.</p>
+<p>If an HLL service routine expects an address in a pointer field, you are responsible
+for assigning a value to that pointer field before starting the HLL service routine.
+In PL/I, you can use the ADDR function when passing pointer variables to HLL
+service routines rather than creating a separate pointer variable for this purpose.
+This ensures that the pointer variable has been assigned a value before starting the
+    HLL service routine.</p>
+<p>“Using Pointer Variables in PL/I” shows how to use pointer variables in PL/I.
+More information for the numbered steps follows the figure.</p>
+        <h2>Using Pointer Variables in PL/I</h2>
+        <p>DCL VARTOVAR CHAR(8) INIT(’VARTOVAR’); /* VARTOVAR constant         */</p><br>
+        <h6>▌1▐ DCL HLBPTR PTR;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      /* HLB pointer MUST BE DECLARED! */</h6>
+<h6>▌h6▐ DCL SRCPTR PTR;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;       /* Source pointer */</h6>
+        <p>DCL DSTPTR PTR;&nbsp;&nbsp;&nbsp;&nbsp;          /* Destination pointer */</p><br>
+<p>DCL DSTLEN FIXED BINARY(31,0); &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/* Length of Destination */
+        <p>DCL SRCBUF CHAR(255) VARYING;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Source buffer &nbsp;&nbsp;&nbsp;*/</p>
+        <p>DCL DSTBUF CHAR(255) VARYING;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Destination buffer&nbsp;&nbsp;&nbsp;&nbsp; */</p>
+        <h6>▌3▐ &nbsp;&nbsp;SRCPTR = ADDR(SRCBUF);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Address of source buffer &nbsp;&nbsp;&nbsp;&nbsp;*/</h6>
+        <p>DSTPTR = ADDR(DSTBUF);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Address of destination buffer &nbsp;&nbsp;&nbsp;*/</p>
+        <p>DSTLEN = LENGTH(DSTBUF);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Length of destination buffer&nbsp;&nbsp;&nbsp;&nbsp; */</p>
+        <p>SRCBUF = (255)’A’; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/* Initialize source buffer &nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+        <p>DSTBUF = (255)’ ’;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Initialize destination buffer &nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+        <h6>▌4▐&nbsp;&nbsp; CALL CNMCPYS(HLBPTR,SRCPTR,DSTPTR,DSTLEN,VARTOVAR); /* Copy buffer&nbsp;&nbsp;v*/</h6>
+        <p>The descriptions for the steps shown in “Using Pointer Variables in PL/I” are:</p>
+        <h6>▌1▐&nbsp;&nbsp; HLBPTR is declared as a pointer (PTR) variable to be used in the</h6>
+<p>CNMCPYS invocation. You must not assign a value to HLBPTR. HLBPTR
+is specified for this invocation because you started CNMCPYS using the
+PL/I call format, rather than the PL/I macro format. Chapter 11, “Servicereference,” on page 173 contains examples of how to start HLL service
+routines using the PL/I macro format.</p>
+        <h6>▌2▐ &nbsp;&nbsp;&nbsp;SRCPTR is declared as a pointer (PTR) variable.</h6>
+<h6>▌3▐ &nbsp;&nbsp;&nbsp;SRCPTR is assigned the address of the source buffer (SRCBUF) to be used
+in the CNMCPYS invocation.</h6>
+<h6>▌4▐&nbsp;&nbsp;&nbsp; Both HLBPTR and SRCPTR have been passed as parameters to CNMCPYS.
+Using the ADDR function eliminates the need to declare pointer (PTR)
+variables. Note here the use of a character constant instead of the
+VARTOVAR variable:
+CALL CNMCPYS(HLBPTR,ADDR(SRCBUF),ADDR(DSTBUF),DSTLEN,’VARTOVAR’);</h6>
+            <p>Note: If you use the ADDR built-in function to represent a pointer to a varying
+length character string and the program is compiled with IBM PL/I for MVS and
+VM V1R1M1, then the IEL0872I message might be generated by the compiler.</p>
+        <h2>Integer variables</h2>
+        <p>Several of the HLL service routines require you to pass a 4-byte integer value to be
+used as a length, count, queue number, and so on. “Using Integer Variables in
+PL/I” illustrates the use of integer variables in the PL/I environment.
+(Descriptions for other statements in this figure are described in “Fixed-length
+character strings” on page 54 and “Varying length character strings” on page 54.)</p>
+        <h3>Using Integer Variables in PL/I</h3>
+       <p> %INCLUDE DSIPLI; /* Include the HLL macros &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+<p>DCL HLBPTR PTR; /* HLB pointer MUST BE DECLARED!&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */</p>
+<p><p>DCL CMDBUF CHAR(*) VARYING; /* Buffer for the command &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+<p><p><p>DCL ORIGBLCK CHAR(40);</p>
+<p>DCL SPNAME CHAR(8) VARYING INIT(’POOLNAME’); /* Subpool name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+<p>DCL SPFUNC CHAR(8); /* Subpool function */</p>
+<p>▌1▐ DCL SPTOKEN FIXED BIN(31,0); /* Subpool token (returned) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+<p>▌2▐ DCL SPLENG FIXED BIN(31,0); /* Cell size */</p>
+<p>DCL SPPRICNT FIXED BIN(31,0); /* Number of cells in primary &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+<p>DCL SPSECCNT FIXED BIN(31,0); /* Number of cells in secondary &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+<p>DCL SPCLASS FIXED BIN(31,0); /* Class of storage &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+<p>SPFUNC = ’ALLOC’; /* Function is ALLOCATE &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+<p>▌3▐ SPTOKEN = 0; /* Initialize subpool token &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+<p>▌4▐ SPLENG = 256; /* Cell size = 256 bytes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */</p>
+<p>SPPRICNT = 3; /* Primary count = 3 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+<p>SPSECCNT = 2; /* Secondary count = 2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+<p>SPCLASS = 1; /* Class = 31 bit addressable &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+<p>▌5▐ CALL CNMPOOL(HLBPTR,SPFUNC,SPTOKEN,SPNAME,SPLENG,SPPRICNT,SPSECCNT,
+SPCLASS); /* Allocate subpool &nbsp;&nbsp;&nbsp;&+nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+The descriptions for the steps shown in “Using Integer Variables in PL/I” are:</p>
+<p>▌1▐ SPTOKEN is declared as a 4-byte integer (FIXED BIN(31,0)).</p>
+<p>▌2▐ SPLENG is declared as a 4-byte integer (FIXED BIN(31,0))</p>
+<p>▌3▐ SPTOKEN is initialized to zero (0). A value is returned in SPTOKEN upon
+successful completion of the CNMPOOL invocation.</p>
+<p>▌4▐ SPLENG is assigned a value of 256 to be used in the call to CNMPOOL.</p>
+
+
+<p>▌5▐ SPTOKEN and SPLENG are passed to CNMPOOL. The value of SPTOKEN
+is returned to you upon successful completion of the call to CNMPOOL.</p>
+        <h2>Fixed-length character strings</h2>
+        <p>Most HLL service routines require you to pass one or more fixed-length character
+strings as arguments. “Using Fixed-Length Variables in PL/I” highlights
+fixed-length variables in the PL/I environment.</p>
+        <h4>Using Fixed-Length Variables in PL/I</h4>
+     <pre>▌1▐&nbsp;&nbsp;&nbsp; %INCLUDE DSIPLI;&nbsp;&nbsp;&nbsp; /* Include &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the HLL macros &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+&nbsp;&nbsp;&nbsp;DCL HLBPTR PTR; &nbsp;&nbsp;&nbsp;/* HLB pointer MUST BE &nbsp;&nbsp;&nbsp;DECLARED! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+&nbsp;&nbsp;&nbsp;DCL CMDBUF CHAR(*) VARYING;&nbsp;&nbsp;&nbsp; /* Buffer for &nbsp;&nbsp;&nbsp;the command &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+▌2▐ &nbsp;&nbsp;&nbsp;DCL ORIGBLCK CHAR(40);
+&nbsp;&nbsp;&nbsp;DCL SPNAME CHAR(8) VARYING &nbsp;&nbsp;&nbsp;INIT(’POOLNAME’);&nbsp;&nbsp;&nbsp; /* Subpool name */
+▌3▐ &nbsp;&nbsp;&nbsp;DCL SPFUNC CHAR(8);&nbsp;&nbsp;&nbsp; /* Subpool function &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+&nbsp;&nbsp;&nbsp;DCL SPTOKEN FIXED BIN(31,0);&nbsp;&nbsp;&nbsp; /* Subpool token (returned)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */
+&nbsp;&nbsp;&nbsp;DCL SPLENG FIXED BIN(31,0);&nbsp;&nbsp;&nbsp; /* Cell size &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+&nbsp;&nbsp;&nbsp;DCL SPPRICNT FIXED BIN(31,0);&nbsp;&nbsp;&nbsp; /* Number of cells in primary */
+&nbsp;&nbsp;&nbsp;DCL SPSECCNT FIXED BIN(31,0);&nbsp;&nbsp;&nbsp; /* Number of cells in secondary */
+&nbsp;&nbsp;&nbsp;DCL SPCLASS FIXED BIN(31,0);&nbsp;&nbsp;&nbsp; /* Class of storage &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+▌4▐ &nbsp;&nbsp;&nbsp;SPFUNC = ’ALLOC’; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/* Function is ALLOCATE &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+&nbsp;&nbsp;&nbsp;SPTOKEN = 0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Initialize subpool token &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+&nbsp;&nbsp;&nbsp;SPLENG = 256; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/* Cell size = 256 bytes &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp*/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SPPRICNT = 3; &nbsp;&nbsp;&nbsp;/* Primary count = 3 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+&nbsp;&nbsp;&nbsp;SPSECCNT = 2;&nbsp;&nbsp;&nbsp; /* Secondary count = 2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SPCLASS = 1; /* Class = 31 bit addressable &nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;*/
+▌5▐&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CALL CNMPOOL(HLBPTR,SPFUNC,SPTOKEN,SPNAME,SPLENG,SPPRICNT,SPSECCNT,
+&nbsp;&nbsp;&nbsp;SPCLASS); &nbsp;&nbsp;&nbsp;/* Allocate subpool &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</pre>
+        
+<h6>▌1▐ PL/I constants for most fixed-length character strings are in the
+DSIPCONS include file. DSIPCONS is optional and can be tailored to your
+specific needs. See Appendix A, “PL/I Control Blocks and Include Files,”
+    on page 269 for more information about DSIPCONS.</h6>
+<h6>▌2▐ HLL service routines use two types of origin blocks: ORIGBLCK and an
+origin block defined by you. The first type of origin block, ORIGBLCK, is a
+40-byte structure that you must declare. This is a required initial parameter
+described in “Initial parameters” on page 49. Do not alter this structure.
+You define the second type of origin block (adorigin, gdorigin). The adorigin
+and gdorigin must be at least 38 bytes long and must map to the first 38
+bytes of the origin block structure (DSIPORIG). You must declare these
+    origin blocks separately from ORIGBLCK.</h6>
+    <h6>▌3▐ SPFUNC is declared as an 8-byte character field (CHAR(8)).</h6>
+<h6>▌4▐ Character string 'ALLOC' is assigned to SPFUNC to be used in the call to
+    CNMPOOL.</h6>
+    <h6>▌5▐ SPFUNC is passed to CNMPOOL. SPFUNC might have been initialized or</h6>
+passed to CNMPOOL as a character constant as shown in the following
+example. In all cases, PL/I automatically pads fixed-length character fields
+with blanks.
+        <p>CALL CNMPOOL(HLBPTR,’ALLOC’,SPTOKEN,SPNAME,SPLENG,SPPRICNT,SPSECCNT,</p>
+        <p>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SPCLASS);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Allocate subpool &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</p>
+      <h2>Varying length character strings</h2> 
+        <p>Several HLL service routines require that you to pass a varying length character
+string as an argument. “Using Varying Length Character Strings in PL/I” on page
+55 highlights the use of varying length character strings in the PL/I environment.</p>
+        <h4>Using Varying Length Character Strings in PL/I</h4>
+        <pre>%INCLUDE DSIPLI; /* Include the HLL macros */
+DCL HLBPTR PTR; /* HLB pointer MUST BE DECLARED! */
+DCL CMDBUF CHAR(*) VARYING; /* Buffer for the command */
+DCL ORIGBLCK CHAR(40);
+▌1▐ DCL SPNAME CHAR(8) VARYING INIT(’POOLNAME’);/* Subpool name */
+DCL SPFUNC CHAR(8); /* Subpool function */
+DCL SPTOKEN FIXED BIN(31,0); /* Subpool token (returned) */
+DCL SPLENG FIXED BIN(31,0); /* Cell size */
+DCL SPPRICNT FIXED BIN(31,0); /* Number of cells in primary */
+DCL SPSECCNT FIXED BIN(31,0); /* Number of cells in secondary */
+DCL SPCLASS FIXED BIN(31,0); /* Class of storage */
+SPFUNC = ’ALLOC’; /* Function is ALLOCATE */
+SPTOKEN = 0; /* Initialize subpool token */
+SPLENG = 256; /* Cell size = 256 bytes */
+SPPRICNT = 3; /* Primary count = 3 */
+SPSECCNT = 2; /* Secondary count = 2 */
+SPCLASS = 1; /* Class = 31 bit addressable */
+▌2▐ CALL CNMPOOL(HLBPTR,SPFUNC,SPTOKEN,SPNAME,SPLENG,SPPRICNT,SPSECCNT,
+SPCLASS); /* Allocate subpool */
+▌1▐ SPNAME is declared as a varying length character field with a maximum
+length of 8 bytes (CHAR(8) VARYING). SPNAME is initialized to
+POOLNAME in this step.
+▌2▐ SPNAME is passed to CNMPOOL</pre>
+        <h3>Control blocks and Include files</h3>
+        <pre>A number of control blocks and include files are required to run a PL/I program in
+the NetView environment. The DSIPLI include file, which contains INCLUDE
+statements for other PL/I control blocks, is the main file necessary to compile
+NetView programs written in PL/I. Optional include files are provided to assist
+you in coding and maintaining HLL programs. You can tailor DSIPLI, DSIPCNM,
+and DSIPCONS to fit your needs.
+Note: Tailoring files can lead to better system performance in many cases. This is
+especially helpful in performance-sensitive environments such as installation exits.
+Appendix A, “PL/I Control Blocks and Include Files,” on page 269 contains these
+include files:
+DSIPLI
+(Required) Must be included by all HLL programs written in PL/I. DSIPLI
+contains INCLUDE statements for all of the external HLL control blocks
+and include files needed to compile and run PL/I programs in the
+NetView environment. See the PL/I coding template in Chapter 7, “PL/I
+high-level language services,” on page 59 for usage.
+DSIPCONS
+(Optional) Declares constants that are helpful when coding HLL programs
+in PL/I.
+DSIPHLB
+(Required) Specifies PL/I mapping of the NetView HLB control block.
+DSIPORIG
+(Required) Specifies PL/I mapping of the origin block of the request that
+caused the execution of the program currently running.</pre>
+        <pre>DSIPHLLS
+(Required) Specifies PL/I definitions for HLL service routines.
+DSIPCNM
+(Optional) Declares HLL return code constants for PL/I.
+DSIPPRM
+(Required) Specifies PL/I mapping of the NetView Bridge parameter
+control block.</pre>
+        <h4>PL/I Input and output considerations</h4>
+<per>PL/I provides several input and output statements that allow you to transmit data
+between main storage and auxiliary storage of a computer. PL/I programs using
+such file I/O capabilities can run in the NetView environment. However, there are
+some important things to consider when doing file I/O in PL/I.
+Note: See “PL/I Input and output considerations in a preinitialized environment”
+on page 57 for I/O considerations in a preinitialized environment.
+Each file referenced from your PL/I program correlates to a physical data set in
+auxiliary storage. Before opening a file for I/O, you must ensure that the
+appropriate data set has been allocated. You can perform allocation under the
+time-sharing option (TSO) or by using the NetView ALLOCATE command
+described in the NetView online help. NetView also provides a FREE command to
+deallocate a data set.
+If the data set is allocated from TSO, you must also add a corresponding data
+definition (DD) statement to the NetView startup procedure. The data definition
+name (ddname) must match the name of the PL/I file. The DD statement specifies a
+physical data set name (dsname) and gives its characteristics, as follows:
+//OUTFILE DD DSN=MYPROG.OUTFILE, ... A DD statement is not necessary if the data set is allocated using the NetView
+ALLOCATE command.
+The following example illustrates the use of file I/O in an HLL program written in
+PL/I. Note the use of the ON UNDEFINEDFILE statement to protect against an
+OPEN failure. Check for this condition before opening a file for I/O.
+DCL OUTFILE FILE STREAM; /* Declare output file */
+.
+.
+.
+/********************************************************************/
+/* Check for error before opening file for I/O. If UNDEFINEDFILE */
+/* condition is raised, issue an error message and exit program. */
+/********************************************************************/
+ON UNDEFINEDFILE(OUTFILE)
+BEGIN;
+CALL CNMSMSG(HLBPTR,’OUTPUT FILE IS UNDEFINED’,’MSG’,’OPER’,’’);
+HLBRC = CNM_GOOD;
+STOP;
+END;
+OPEN FILE(OUTFILE) OUTPUT; /* Open file for output */
+.
+.
+.
+PUT SKIP FILE(OUTFILE) ... /* Write to output file */
+    CLOSE FILE(OUTFILE); /* Close output file */</per>
+        <p>If you want to write to a common output file from two or more PL/I programs,
+the programs must coordinate access to the common file. You can accomplish this
+using the HLL CNMLK service routine. If access is not coordinated, you might
+            experience a system ABEND 213.</p>
+        <p>
+Note: PL/I and C cannot share an open file. However, a C program can read a file
+        created by PL/I.</p><p>
+If you choose to code a GET or PUT statement without the FILE option, the
+compiler inserts the file names SYSIN and SYSPRINT. By default, SYSIN and
+SYSPRINT are directed to the terminal. These defaults are not valid, and cause
+undetermined results if used in the NetView environment. Terminal I/O can be
+done using WAIT FOR OPINPUT and CNMSMSG as described in Chapter 11,
+“Service reference,” on page 173. For more information about files and PL/I I/O,
+refer to the PL/I library. </p>
+        <h3>PL/I Input and output considerations in a preinitialized
+environment</h3>
+        <p>Programs that you want to run in a preinitialized environment cannot perform file
+I/O with PL/I language-specific functions. These programs can perform
+stream-oriented output only to SYSPRINT, and SYSPRINT must be declared as an
+            external file.</p><p>
+I/O services provided by the HLL service routines are not affected by
+preinitialized environments.</p>
+        <h4>PL/I runtime considerations</h4>
+        <p>All errors detected at run time are associated with PL/I conditions that can be
+handled by ON-unit statements written by the programmer. An ON-unit is a
+user-written statement that establishes an action to be started when a particular
+PL/I error condition is raised. PL/I error conditions can be detected by the
+            operating system or by PL/I.</p><p>
+Because PL/I programs running in a production NetView environment must run
+with the TRAP(OFF) option, do not code ON-unit statements for operating system
+        detected conditions.</p><p>
+While debugging a PL/I program in a test NetView environment, use the
+TRAP(ON) option until runtime problems are resolved. If you plan to use
+programs in a preinitialized environment, you might want to run them
+non-preinitialized with TRAP(ON) until runtime problems have been resolved.
+Most runtime errors are represented by diagnostic messages written to the
+SYSPRINT file. For more information on the TRAP option, refer to the z/OS
+Language Environment library</p><hr>
+        <h4>Considerations for HLL command processors</h4>
+        <p>Code a CMDDEF statement in CNMCMD for each HLL command processor that
+you write. The CMDDEF TYPE depends on the functions that your command
+processor performs. Keep in mind that some of the HLL services are useful only
+when they are run under a DST. The CMDDEF statement is described in the IBM
+Tivoli NetView for z/OS Administration Reference.There is no support for HLL command processors running as immediate
+commands (TYPE=I) or being pushed (with the macro DSIPUSH) as ABEND,
+LOGOFF, or RESUME routines</p><hr>
+        <h4>Return codes</h4>
+<p>When an HLL service routine is done, its completion code is stored in the return
+code field (HLBRC) of the HLB control block. Check this field after each HLL
+service routine invocation. Also, use this field when passing return codes between
+    HLL programs.</p><p>
+For a complete list of HLL API return codes, see DSIPCNM in Appendix A, “PL/I
+Control Blocks and Include Files,” on page 269. Chapter 11, “Service reference,” on
+        page 173 describes the return codes that apply to each HLL service routine.</p><p>
+Do not use PLIRETV and PLIRETC when passing return codes between HLL
+programs written in PL/I. Both of these routines can yield unpredictable results in
+the NetView environment. To end a PL/I program normally, assign a value to
+HLBRC and issue a RETURN statement as illustrated below:
+HLBRC = CNM_GOOD; /* Successful completion */
+RETURN; /* Return to caller */</p><hr>
+        <h4>Restrictions for HLL programs written in PL/I</h4>
+        <p>Do not use these commands when coding PL/I programs to run in the NetView
+            environment:</p>
+<p>Table 14. Restrictions for HLL Programs Written in PL/I</p>
+        <table style="width:100%">
+  <tr>
+    <th>Command</th>
+    <th>Alternative</th>
+    
+  </tr>
+  <tr>
+    <td>DISPLAY</td>
+    <td>Use the NetView CNMSMSG service routine</td>
+            </tr>
+            <tr> 
+                <td>WAIT, DELAY</td>
+                 <td>Use the NetView WAIT command</td>
+            </tr>
+            <tr>
+    <td>ON FIXEDOVERFLOW<br>
+ON OVERFLOW<br>
+ON UNDERFLOW<br>
+ON ZERODIV</td>
+                 <td>These condition codes do not work in the NetView program
+because they require SPIE and STAE.</td>
+            </tr>
+      
+  
+  <tr>
+    <td>PLIRETV PLIRETC</td>
+   
+  
+      <td>Pass return codes through HLBRC.</td>
+  </tr>
+</table>
+        <br>
+        <hr>
+        <h3>Restrictions for PL/I programs running in a preinitialized environment</h3>
+        <p>The following restrictions apply to PL/I programs that run in a preinitialized
+            environment:</p> 
+            <p>.PL/I language-specific file I/O is not valid. This excludes stream-oriented
+                output to SYSPRINT. </p><p>. CONTROLLED variables are not valid.</p> . <p>.FETCH/RELEASE statements are not valid.</p> <p>.STOP statements are not valid.</p><p> . Invocations of assembler routines that contain an SVC LINK are not valid. </p><p>.EXIT statements must not be used.</p>
+<p>The previous restrictions are needed so that different programs can reuse the same
+environment. For more information about restrictions resulting from shared use of
+preinitialized environments, refer to the z/OS Language Environment library.</p>
+        <h2>Chapter 7. PL/I high-level language services</h2>
+        <p>This chapter describes and provides examples of NetView commands and services
+that support PL/I. See Chapter 11, “Service reference,” on page 173 for more
+            information.</p><p>
+Note: When you are compiling PL/I programs for the NetView program, you
+receive the IEL0548I message. When you are compiling programs for the Enterprise
+PL/I for z/OS program, you receive the IBM1195I message. You can ignore these
+        messages.</p><hr>
+        <h3>PL/I sample template</h3>
+        <p>PL/I sample template” is a coding template sample you can use when coding
+HLL programs in PL/I. Use this template, with your enhancements, to use
+NetView functions and commands. Use the examples in this chapter with this
+template. Fully functional samples of NetView command procedures written in
+PL/I are described in Appendix B ."PL/Isamples." on page 271</p>
+        <h6>PL/I sample template</h6>
+        <pre>*PROCESS SYSTEM(MVS);
+PTMPPLT: PROC(HLBPTR,CMDBUF,ORIGBLCK) OPTIONS(MAIN,REENTRANT);
+/********************************************************************/
+/* */
+/* 5697-B82 (C) COPYRIGHT IBM CORPORATION 1989, 1995 */
+/* ALL RIGHTS RESERVED. */
+/* */
+/* IEBCOPY SELECT MEMBER=((CNMS4200,PTMPPLT,R)) */
+/* */
+/* (Explanations included in parentheses should be deleted) */
+/* (after the pertinent information has been filled in. ) */
+/* */
+/* Descriptive Name: High-Level Language PL/I Template */
+/* (This is the more descriptive name or title of the module.) */
+/* */
+/* Function: */
+/* Template for writing HLL modules in PL/I. */
+/* (This is the description of what the module does.) */
+/* (It may be paragraph or pseudocode form. ) */
+/* */
+/* Dependencies: */
+/* (List conditions that must be met in order for this) */
+/* (module to perform. An example of this might be a ) */
+/* (key data area that must already have been built. ) */
+/* */
+/* Restrictions: */
+/* (List any limitations this module may have.) */
+/* */
+/* Language: PL/I */
+/* */
+/* Input: */
+/* 1) A pointer to a 4-byte field containing the address of */
+/* the HLB control block. */
+/* 2) A varying length character string containing the */
+/* command or message which invoked this program. */
+/* If this program was invoked as a command processor, */
+/* this will be a command string. */
+/* If this program was invoked as an installation exit */
+/* (other than DSIEX02A), this will be a message string. *</pre>
+        <h6>PL/I High-Level Language Services</h6>
+        <pre>/* When driven as DSIEX02A- */
+/* this string will be empty and the message must */
+/* be retrieved from the Initial Data Queue (IDATAQ). */
+/* 3) A 40-byte structure which describes the origin of the */
+/* request that caused execution of this program. */
+/* */
+/* Output: */
+/* (Describe any output from this module.) */
+/* */
+/* Return Codes: returned in Hlbrc */
+/* For Command Processors: */
+/* 0 = normal exit */
+/* -5 = cancelled */
+/* (List any other return codes meaningful to this module.) */
+/* For Installation Exits: */
+/* 0 = USERASIS (Leave the contents of the message buffer */
+/* unchanged) */
+/* 4 = USERDROP (Drop the message buffer) */
+/* 8 = USERSWAP (Change the contents of the message buffer) */
+/* */
+/* External Module References: */
+/* (List modules that are called by this module.) */
+/* */
+/* Change Activity: */
+/* date,author: description of changes */
+/* (Keep a log of the changes made to this module for) */
+/* (future reference. ) */
+/********************************************************************/
+/********************************************************************/
+/* NetView High-Level Language include files */
+/********************************************************************/
+%INCLUDE DSIPLI; /* Include the HLL macros */
+/********************************************************************/
+/* HLL Run-time options (Set to Non-Preinitialized regardless of */
+/* the value specified for the DEFAULT keyword of the HLLENV */
+/* command. */
+/********************************************************************/
+DCL HLLOPTS BIT(32) STATIC EXTERNAL
+INIT(’00100000000000000000000000000000’);
+/********************************************************************/
+/* Parameter declarations */
+/********************************************************************/
+DCL HLBPTR PTR; /* Pointer to the HLB */
+DCL CMDBUF CHAR(*) VARYING; /* Buffer for the command */
+DCL ORIGBLCK CHAR(40); /* Area for the Origin Block */
+/********************************************************************/
+/* Other declarations */
+/********************************************************************/
+DCL ORIGIN PTR; /* Pointer to the Origin Block */
+DCL ADDR BUILTIN; /* Builtin function */
+/********************************************************************/
+/* Initialization */
+/********************************************************************/
+ORIGIN=ADDR(ORIGBLCK); /* Address of the Origin Block */
+/********************************************************************/
+/* Execution */
+/********************************************************************/
+HLBRC = CNM_GOOD; /* Successful completion */
+END PTMPPLT;</pre>
+        <hr>
+        <h4>Data queue management</h4>
+        <p>The NetView program uses several data and message queues to work with HLL
+service routines. Use the CNMGETD function to manipulate information retrieved
+from these queues to enhance your network manageability. Table 15 describes how
+queues are defined for data and message management:</p>
+        <h6>gement:
+Table 15. Data and Message Management Queues</h6>
+        <table>
+            <tr>
+                <th>Queue
+Name</th>
+                <th>Queue
+Number</th>
+                <th>Function</th>
+            </tr>
+            <tr>
+                <td>TRAPQ</td><td> 1 </td><td>Message queue. Contains trapped messages. See “TRAP
+command” on page 182.</td>
+            </tr>
+            <tr><td>OPERQ </td><td>2 </td><td>Operator input queue. See “GO command” on page 177 and
+                “QUEUE command” on page 178.</td></tr>
+<tr><td>DATAQ</td><td> 3 </td><td>Data queue. Contains data sent from another HLL command
+processor or installation exit routine. See “CNMSMSG
+(CNMSENDMSG): Send Message or Command” on page 251.</td></tr>
+<tr><td>IDATAQ</td><td> 4 </td><td>Initial data queue. Contains the full message or MSU that starts
+the HLL command processor through NetView automation. It also
+contains messages that drive DSIEX02A and DSIEX17. This is also
+the queue where an application command processor receivesan
+MDS-MU from the NetView high-performance transport, the MS
+transport, or operations management for an unsolicited request or
+asynchronous reply. For invocations from pipes, the IDATAQ
+contains the data flowing into the HLL command processor.</td> </tr>
+        <tr><td>CNMIQ </td><td>5 </td><td>CNMI solicited data queue. Contains RUs solicited through the
+CNMI service routine. Chained RUs are treated like multiline
+messages. See “CNMCNMI (CNMI): CNMI access under a DST”
+on page 189.</td></tr>
+<tr><td>MDSMUQ</td><td> 6 </td><td>MDS-MU data queue. Contains message units (MUs) received as
+synchronous replies. The MDS-MUs are received from operations
+management, the MS transport, and the high-performance
+transport. Refer to the IBM Tivoli NetView for z/OS Application
+Programmer's Guide for more information</td></tr>
+             </table><br>
+            <p>The examples in the following sections show how the preceding queues are used
+with HLL command procedures.</p><hr>
+      <h4>Sending messages</h4> 
+        <pre>Sending messages (PL/I)
+/********************************************************************/
+/* SEND A MULTILINE MESSAGE TO USER */
+/********************************************************************/
+CALL CNMSMSG(HLBPTR,’Line 1 of 3 ’,’MSG_C’,’OPER’,’’);
+CALL CNMSMSG(HLBPTR,’Line 2 of 3 ’,’MSG_D’,’OPER’,’’);
+CALL CNMSMSG(HLBPTR,’Line 3 of 3 ’,’MSG_F’,’OPER’,’’);
+/********************************************************************/
+/* SEND A MULTILINE MESSAGE TO A TASK */
+/********************************************************************/
+CALL CNMSMSG(HLBPTR,’Line 1 of 3 ’,’MSG_C’,’TASK’,’OPER2’);
+CALL CNMSMSG(HLBPTR,’Line 2 of 3 ’,’MSG_D’,’TASK’,’OPER2’);
+CALL CNMSMSG(HLBPTR,’Line 3 of 3 ’,’MSG_F’,’TASK’,’OPER2’);
+/********************************************************************/
+/* SEND A MESSAGE TO THE CONSOLE (only 1-liners)*/
+/********************************************************************/
+CALL CNMSMSG(HLBPTR,’Hello Sysop ’,’MSG’,’SYSOP’,’’);
+/********************************************************************/
+/* SEND A MESSAGE TO THE AUTHORIZED RECEIVER */
+/********************************************************************/
+CALL CNMSMSG(HLBPTR,’Hello Authrcvr ’,’MSG’,’AUTHRCV’,’’);
+/********************************************************************/
+/* SEND A MESSAGE TO THE NETWORK LOG */
+/********************************************************************/
+CALL CNMSMSG(HLBPTR,’This should only be in log’,’MSG’,’NETVLOG’,’’);
+/********************************************************************/
+/* SHOW THAT YOU CAN SEND TO SEQLOG */
+/********************************************************************/
+CALL CNMSMSG(HLBPTR,’test msg’,’MSG’,’SEQLOG’,’SQLOGTSK’);
+/********************************************************************/
+/* SHOW THAT YOU CAN SEND TO A GROUP */
+/********************************************************************/
+CALL CNMSMSG(HLBPTR,’hello group’,’MSG’,’OPCLASS’,’+GROUP1’)</pre><hr>
+   <h4>Parsing input strings similar to NetView Command List Language</h4>
+        <p>“Parsing an input string (PL/I)” is an example of parsing the input string that is
+similar to parsing with the NetView command list language. The example parses
+the first 10 tokens individually, just as the NetView command list language parses
+them into &1, &2, and so on. This example also sets an equivalent variable to
+&PARMSTR</p>
+        <pre>Parsing an input string (PL/I)
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL (CLIST1,CLIST2,CLIST3,
+CLIST4,CLIST5,CLIST6,
+CLIST7,CLIST8,CLIST9,
+CLIST10,PARMSTR)
+CHAR(255) VARYING;
+DCL PARMCNT FIXED BIN(31,0); /* Number of tokens parsed */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+CNMSSCAN /* Parse like NetView Command
+...List Language parses */
+DATA(CMDBUF) /* ...input is in cmdbuf */
+FORMAT(’%*S0S0S0S0S0S’)/* ...parse each token by blanks */
+/* ...but skip the command */
+COUNT(PARMCNT) /* ...number of tokens parsed */
+P1(CLIST1) /* ...first token */
+P2(CLIST2) /* ...next token */
+P3(CLIST3) /* ...next token */
+P4(CLIST4) /* ...next token */
+P5(CLIST5) /* ...next token */
+P6(CLIST6) /* ...next token */
+P7(CLIST7) /* ...next token */
+P8(CLIST8) /* ...next token */
+P9(CLIST9) /* ...next token */
+P10(CLIST10); /* ...last token */
+CNMSSCAN /* Parse like NetView Command
+...List Language parses */
+DATA(CMDBUF) /* ...input is in cmdbuf */
+FORMAT(’%*S%{¬}’) /* ...skip over command, then */
+/* ...put all parms in a target */
+COUNT(PARMCNT) /* ...number of tokens parsed */
+P1(PARMSTR); /* ...first token */</pre><hr>
+        <h4>Parsing input string in CNMSCAN</h4>
+        <p>“Parsing an input string in CNMSCAN (PL/I)” shows how the C SSCANF
+function, CNMSCAN, parses and converts in a single step and accepts any input
+character as a delimiter</p>
+        <pre>Parsing an input string in CNMSCAN (PL/I)
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL CNT FIXED BINARY(31,0); /* Number of strings parsed */
+DCL INPUT_STR CHAR(256) VARYING; /* Sscan input string */
+DCL FORMAT CHAR(256) VARYING; /* Sscan format string */
+DCL MSGBUF CHAR(256) VARYING; /* Message buffer */
+DCL (CH1,CH2,CH3,CH4,CH5,CH6)
+CHAR(8) VARYING; /* Char vars */
+DCL (FX1,FX2,FX3)
+FIXED BINARY (31,0); /* Fixed vars */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+/********************************************************************/
+/* Parse out a string */
+/********************************************************************/
+INPUT_STR=’parm1 ’|| /* Set input string up */
+’parm2 ’||
+’parm3 ’||
+’10000 ’||
+’200 ’||
+’FFFFF ’||
+’01XYZ2’||
+’ parm4’;
+FORMAT= /* The format string says to:
+’%S’ || /* (1) Find a character string */
+’%4S’ || /* (2) Find a 4-byte character
+string */
+’%S’ || /* (3) Find a character string */
+’%*S’ || /* (4) Skip over a character
+string */
+’%D’ || /* (5) Find a decimal string */
+’%2D’ || /* (6) Find a 2-byte decimal
+string */
+’%*S’ || /* (7) Skip over a character
+string */
+’%X’ || /* (8) Find a hex string */
+’%{ Q10}’|| /* (9) Find a string that contains
+one of the bracketed
+characters, stop scanning
+when a non-bracketed
+character is found */
+’%{2ZYX}’|| /*(10) Find a string that contains
+one of the bracketed
+characters, stop scanning
+when a non-bracketed
+character is found */
+’%{¬4}’; /*(11) Find a string that
+does NOT contain a 4, stop
+scanning when a 4 is found */
+CALL CNMSCAN(HLBPTR, /* Scan the input string... */
+INPUT_STR, /* ...input is in here */
+FORMAT, /* ...format string */
+CNT, /* ...number of string parsed */
+CH1, /* ...character string */
+CH2, /* ...character string */
+CH3, /* ...character string */
+FX1, /* ...decimal string */
+FX2, /* ...decimal string */
+FX3, /* ...hex string */
+CH4, /* ...character string */
+CH5, /* ...character string */
+CH6, /* ...character string */
+’’ ); /* ...not used */
+/********************************************************************/
+/* After executing, the variables have these values: */
+/* */
+/* CH1 = "parm1" */
+/* CH2 = "parm" */
+/* CH3 = "2" */
+/* FX1 = 10000 Decimal, 2710 Hex */
+/* FX2 = 20 Decimal, 14 Hex */
+/* FX3 = 1048575 Decimal, FFFFF Hex */
+/* CH4 = " 01" */
+/* CH5 = "XYZ2" */
+/* CH6 = " parm" */
+/* */
+/* */
+/********************************************************************/</pre>
+        <hr>
+        <h3>Starting synchronous commands</h3>
+        <p>Starting synchronous commands (PL/I)” is an example of an HLL command
+processor starting another command. The command can be another HLL
+command, a command list, a VTAM command, or a NetView command.</p>
+        <pre>Starting synchronous commands (PL/I)
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+/* Issue the VTAM command D NET,APPLS */
+CALL CNMCMD(HLBPTR, /* Invoke the command... */
+’D NET,APPLS’); /* ...text of the command to run */</pre><hr>
+        <h4>Sending commands</h4>
+        <p>Sending a command to run another task (PL/I)” is an example of sending a
+command to run under another task. The command to be run under the other task
+can be another HLL command, a command list, a VTAM command, or a NetView
+command</p><br>
+        <p>Use this process to run commands under DSTs, other OSTs, or the PPT.</p>
+        <per>Sending a command to run another task (PL/I)
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+/* Issue the LOGOFF command on a task called OPER1 */
+CALL CNMSMSG(HLBPTR, /* Send the command... */
+’LOGOFF’, /* ...text of the command to run */
+’COMMAND’, /* ...this is a command */
+’TASK’, /* ...run it on a task */
+’OPER1’); /* ...task name is OPER1 */
+SELECT;
+WHEN(HLBRC=CNM_GOOD)
+CALL CNMSMSG(HLBPTR, /* Inform user of success... */
+’OPER1 logoff successfully scheduled’, /* ...text of msg*/
+’MSG’, /* ...this is a message */
+’OPER’, /* ...to the operator */
+        ’’); /* ...not used */
+WHEN(HLBRC=CNM_TASK_INACTIVE)
+CALL CNMSMSG(HLBPTR, /* Inform user task not active...*/
+’OPER1 not active’, /* ...text of message */
+’MSG’, /* ...this is a message */
+’OPER’, /* ...to the operator */
+’’); /* ...not used */
+OTHERWISE
+CALL CNMSMSG(HLBPTR, /* Inform user bad rc... */
+’Unexpected RC from CNMSMSG’, /* ...text of message */
+’MSG’, /* ...this is a message */
+’OPER’, /* ...to the operator */
+’’); /* ...not used */
+END; /* of select */
+            HLBRC=CNM_GOOD; /* Clear RC */</per>
+<h4>Waiting and trapping</h4>
+        <p>’’); /* ...not used */
+WHEN(HLBRC=CNM_TASK_INACTIVE)
+CALL CNMSMSG(HLBPTR, /* Inform user task not active...*/
+’OPER1 not active’, /* ...text of message */
+’MSG’, /* ...this is a message */
+’OPER’, /* ...to the operator */
+’’); /* ...not used */
+OTHERWISE
+CALL CNMSMSG(HLBPTR, /* Inform user bad rc... */
+’Unexpected RC from CNMSMSG’, /* ...text of message */
+’MSG’, /* ...this is a message */
+’OPER’, /* ...to the operator */
+’’); /* ...not used */
+END; /* of select */
+HLBRC=CNM_GOOD; /* Clear RC */
+Waiting and trapping</p>
+        <h6>Example of using the TRAP and WAIT commands (PL/I)</h6>
+        <p>The syntax for the command shown in “Waiting and trapping using the TRAP and
+WAIT commands (PL/I)” follows:</p>
+        <h10>PACTLU</h10>
+        ►► <hr> ►◄
+        <pre>Where:
+luname
+Is the name of the LU to be activated.
+Waiting and trapping using the TRAP and WAIT commands (PL/I)
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL GETBLOCK CHAR(40); /* Area for the Orig Block */
+DCL GETPTR PTR; /* Pointer to the Orig Block */
+DCL INBUF CHAR(256) VAR; /* Buffer area for messages */
+DCL NODENAME CHAR(8) VAR; /* Nodename to be activated */
+DCL STATUS CHAR(8) VAR; /* Status of the resource */
+DCL CNT FIXED BIN(31,0); /* Number of elements parsed */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+GETPTR=ADDR(GETBLOCK); /* Address the Orig Block */
+/********************************************************************/
+/* Scan the input for the lu name to activate */
+/********************************************************************/
+CALL CNMSCAN(HLBPTR, /* Parse the input ... */
+PACTLU
+►► PACTLU luname ►◄
+PL/I High-Level Language Services
+66 Programming: PL/I and C
+CMDBUF, /* ...command line is the input */
+’%*S%8S’, /* ...skip over command name */
+CNT, /* ...returned */
+NODENAME); /* ...nodename */
+IF CNT=1 THEN /* Nodename specified? */
+DO; /* Yes... */
+CALL CNMCMD(HLBPTR, /* Trap the following VTAM msgs */
+’ TRAP AND SUPPRESS ONLY MESSAGES IST*’);
+CALL CNMCMD(HLBPTR,’ V NET,ACT,ID=’||NODENAME); /* Activate node*/
+CALL CNMCMD(HLBPTR,’ WAIT 10 SECONDS FOR MESSAGES’); /* Wait... */
+CALL CNMGETD(HLBPTR, /* Get the first trapped msg... */
+’GETMSG’, /* ...function is get a msg */
+INBUF, /* ...result goes here */
+256, /* ...max input length */
+GETBLOCK, /* ...must provide a work area */
+TRAPQ, /* ...message is trapped */
+1); /* ...get the first one */
+/****************************************************************/
+/* Loop through messages until IST093I is found or no more */
+/* ...messages are left */
+/****************************************************************/
+DO WHILE(GETPTR->ORIG_BLOCK.ORIG_PROCESS¬=’IST093I’ &
+HLBRC=CNM_GOOD);
+CALL CNMCMD(HLBPTR,’ WAIT CONTINUE’); /* Wait for next msg... */
+CALL CNMGETD(HLBPTR, /* Get the next trapped msg... */
+’GETMSG’, /* ...function is get a msg */
+INBUF, /* ...result goes here */
+255, /* ...max input length */
+GETBLOCK, /* ...must provide a work area */
+TRAPQ, /* ...message is trapped */
+1); /* ...get the top one on queue */
+END;
+IF (HLBRC=CNM_GOOD /* Did we find IST093I? */
+GETPTR->ORIG_BLOCK.ORIG_PROCESS=’IST093I’) THEN
+CALL CNMSMSG(HLBPTR, /* Inform user activation worked */
+’RESOURCE ’||NODENAME||’ NOW ACTIVE’,
+/* ...text of message */
+’MSG’, /* ...single line message */
+’OPER’, /* ...to the operator */
+’’); /* ...not needed */
+ELSE /* IST093I not found, must be
+...an error */
+CALL CNMSMSG(HLBPTR, /* Inform user activation failed */
+’ERROR - ACTIVATION UNSUCCESSFUL’,
+’’); /* ...not needed */
+END;
+ELSE /* Nodename not specified */
+CALL CNMSMSG(HLBPTR, /* Inform user need more args */
+’ERROR - NODENAME NOT SPECIFIED’,
+/* ...text of message */
+’MSG’, /* ...single line message */
+’OPER’, /* ...to the operator */
+’’); /* ...not needed */</pre>
+        <h4>Example of using the PIPE command (PL/I)</h4>
+        <p>The syntax for the command shown in “Waiting and trapping using the PIPE
+command (PL/I)” on page 68 is as follows:
+Where:
+PACTPIP
+►► PACTPIP luname ►◄</p><hr>
+        <pre>luname
+Is the name of the LU to be activated.
+Waiting and trapping using the PIPE command (PL/I)
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL GETBLOCK CHAR(40); /* Area for the Orig Block */
+DCL GETPTR PTR; /* Pointer to the Orig Block */
+DCL INBUF CHAR(256) VAR; /* Buffer area for messages */
+DCL NODENAME CHAR(8) VAR; /* Nodename to be activated */
+DCL STATUS CHAR(8) VAR; /* Status of the resource */
+DCL CNT FIXED BIN(31,0); /* Number of elements parsed */
+DCL VARNM CHAR(16) VAR /* Var name for PIPE result */
+INIT(’VNETRESULT’); /* should be VNETRESULT */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+GETPTR=ADDR(GETBLOCK); /* Address the Orig Block */
+/********************************************************************/
+/* Scan the input for the lu name to activate */
+/********************************************************************/
+CALL CNMSCAN(HLBPTR, /* Parse the input ... */
+CMDBUF, /* ...command line is the input */
+’%*S%8S’, /* ...skip over command name */
+CNT, /* ...returned */
+NODENAME); /* ...nodename */
+IF CNT=1 THEN /* Nodename specified? */
+DO; /* Yes... */
+CALL CNMVARS(HLBPTR, /* Declare a variable ... */
+DCL, /* ...declare function */
+’, /* ...not needed */
+0, /* ...not needed */
+VARNM, /* ...specifies variable name */
+LOCAL); /* ...local variable pool */
+/********************************************************************/
+/* Build the PIPE command. */
+/* The VTAM stage issues the VARY command. */
+/* The CORRWAIT stage waits 10 seconds for each message to */
+/* return to the pipeline. */
+/* The TOSTRING stage selects messages to remain in the pipeline */
+/* up to and including one having ’IST093I’ in columns 1-7. */
+/* The TAKE stage selects the last message in the pipeline, */
+/* discarding all others. */
+/* The VAR stage writes the message to the variable specified. */
+/********************************************************************/
+CALL CNMCMD(HLBPTR,’PIPE VTAM V NET,ACT,ID=’||NODENAME||
+’| CORRWAIT 10 ’ ||
+’| TOSTRING FIRST 1.7 /IST093I/ ’ ||
+’| TAKE LAST 1 ’ ||
+’| VAR ’ || VARNM );
+CALL CNMVARS(HLBPTR, /* Read the variable ... */
+GET, /* ...get the value */
+INBUF, /* ...result goes here */
+256, /* ...max input length */
+VARNM, /* ...specifies variable name */
+LOCAL); /* ...local variable pool */
+IF (SUBSTR(INBUF,1,7) = ’IST093I’) THEN /* Did we find IST093I? */
+CALL CNMSMSG(HLBPTR, /* Inform user activation worked */
+’RESOURCE ’||NODENAME||’ NOW 
+’MSG’, /* ...single line message */
+’OPER’, /* ...to the operator */
+’’); /* ...not needed */
+ELSE /* IST093I not found, must be
+...an error */
+CALL CNMSMSG(HLBPTR, /* Inform user activation failed */
+’ERROR - ACTIVATION UNSUCCESSFUL’,
+/* ...text of message */
+’MSG’, /* ...single line message */
+’OPER’, /* ...to the operator */
+’’); /* ...not needed */
+END;
+ELSE /* Nodename not specified */
+CALL CNMSMSG(HLBPTR, /* Inform user need more args */
+’ERROR - NODENAME NOT SPECIFIED’,
+/* ...text of message */
+’MSG’, /* ...single line message */
+’OPER’, /* ...to the operator */
+’’); /* ...not needed */
+For more information about the PIPE command, refer to IBM Tivoli NetView for
+z/OS Programming: Pipes.</pre><hr>
+        <h4>Retrieving information</h4>
+    
+<p>“Retrieving Information (PL/I)” is an example of how an HLL command processor
+or installation exit routine can retrieve information from the NetView program.
+For more information, see “CNMINFC (CNMINFOC): Query NetView Character
+Information” on page 218 and “CNMINFI (CNMINFOI): Query NetView Integer
+    Information” on page 221 for a list of the values supported.</p>
+        <pre>Retrieving Information (PL/I)
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL CDATA CHAR(18) VAR; /* Character information holder */
+DCL IDATA FIXED BIN(31,0); /* Integer information holder */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+CALL CNMINFC(HLBPTR, /* Retrieve the date & time... */
+’DATETIME’, /* ...specify the variable */
+CDATA, /* ...result goes here */
+18); /* ...at most 18 bytes */
+CALL CNMINFI(HLBPTR, /* Retrieve the number of colors */
+/* ...that the terminal supports */
+’COLORS’, /* ...specify the variable */
+IDATA); /* ...result goes here */</pre><hr>
+        <h4>Command list variable access</h4>
+        <p>
+“Accessing common global variables (PL/I)” shows the capability of updating
+common global variables. This example increments a global variable named
+GVARIABLE by 1. Task global variables are updated and read the same way. The
+            only difference is the pool name TGLOBAL is specified instead of CGLOBAL.</p><br><p>
+“Accessing stem variables using the PIPE command (PL/I)” shows how to retrieve
+values from a stem variable after issuing a PIPE command with the STEM stage
+command.</p>
+        <pre>Accessing common global variables (PL/I)
+Accessing common global variables (PL/I)
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL DATA_IN CHAR(24) VAR; /* Holds the input data */
+DCL DATA_IN_LEN FIXED BIN(31,0) INIT(24); /* Max length of input*/
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+/********************************************************************/
+/* Find the value of the variable */
+/********************************************************************/
+CALL CNMVARS(HLBPTR, /* Read the global variable... */
+’GET’, /* ...function is read */
+DATA_IN, /* ...result goes here */
+DATA_IN_LEN, /* ...truncate after 24-bytes */
+’GVARIABLE’, /* ...variable name is GVARIABLE */
+’CGLOBAL’); /* ...variable pool is CGLOBAL */
+DATA_IN=DATA_IN+1; /* Increment Variable */
+/********************************************************************/
+/* Set the global variable */
+/********************************************************************/
+CALL CNMVARS(HLBPTR, /* Update the global variable... */
+’PUT’, /* ...function is write */
+DATA_IN, /* ...data is here */
+’’, /* ...not used */
+’GVARIABLE’, /* ...variable name is GVARIABLE */
+’CGLOBAL’); /* ...variable pool is CGLOBAL */
+Accessing stem variables using the PIPE command (PL/I)
+Accessing stem variables using the PIPE command (PL/I)
+/*********************************************************************/
+/* Other Declarations */
+/*********************************************************************/
+DCL NUMVARS CHAR(4) VARYING; /* Number of variables in stem */
+DCL PIPECMD CHAR(256) VARYING; /* Buffer to hold PIPE command */
+DCL STEMLINE CHAR(80) VARYING; /* Store value of stem variable */
+DCL VARNAME CHAR(15) VARYING; /* Name of stem variable */
+/*********************************************************************/
+/* Execution */
+/*********************************************************************/
+/*********************************************************************/
+/* Build a PIPE command. */
+/* The < (From Disk) stage reads data into the pipeline from */
+PL/I High-Level Language Services
+70 Programming: PL/I and C
+/* MYINFILE, a member of a dataset associated with the ddname */
+/* DSIPARM. The records are treated as single-line messages. */
+/* The NLOCATE stage discards comments lines which begin with */
+/* either ’*’ or ’/*’. */
+/* The STEM stage writes the remaining messages from the pipeline */
+/* to stemmed variables named PIPELINEx. */
+/*********************************************************************/
+PIPECMD = ’PIPE < MYINFILE’||
+’ | NLOCATE 1.1 &*& 1.2 &/*&’||
+’ | STEM PIPELINE’; /* Build PIPE command */
+CNMCOMMAND DATA(PIPECMD); /* Issue PIPE command */
+/*********************************************************************/
+/* Local variable PIPELINE0 contains the character representation of */
+/* the total number of PIPELINEx stem variables. */
+/*********************************************************************/
+VARNAME = ’PIPELINE0’;
+/*********************************************************************/
+/* Get number of stem variables and store value in NUMVARS. */
+/*********************************************************************/
+CNMVARPOOL FUNC(’GET’)
+NAME(VARNAME)
+POOL(’LOCAL’)
+DATA(NUMVARS)
+LENG(4);
+/*********************************************************************/
+/* Local variable PIPELINE1 contains the first non-comment line in */
+/* MYINFILE. */
+/*********************************************************************/
+VARNAME = ’PIPELINE1’;
+/*********************************************************************/
+/* Get first non-comment line and store value in STEMLINE. */
+/*********************************************************************/
+CNMVARPOOL FUNC(’GET’)
+NAME(VARNAME)
+POOL(’LOCAL’)
+DATA(STEMLINE)
+LENG(80);
+For more information about the PIPE command, refer to IBM Tivoli NetView for
+z/OS Programming: Pipes.</pre><hr>
+        <h4>Using locks</h4>
+        <per>
+“Retrieving Information (PL/I)” is an example of how an HLL command processor
+or installation exit routine can retrieve information from the NetView program.
+For more information, see “CNMINFC (CNMINFOC): Query NetView Character
+Information” on page 218 and “CNMINFI (CNMINFOI): Query NetView Integer
+Information” on page 221 for a list of the values supported.
+Retrieving Information (PL/I)
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL CDATA CHAR(18) VAR; /* Character information holder */
+DCL IDATA FIXED BIN(31,0); /* Integer information holder */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+CALL CNMINFC(HLBPTR, /* Retrieve the date & time... */
+’DATETIME’, /* ...specify the variable */
+CDATA, /* ...result goes here */
+18); /* ...at most 18 bytes */
+CALL CNMINFI(HLBPTR, /* Retrieve the number of colors */
+/* ...that the terminal supports */
+’COLORS’, /* ...specify the variable */
+IDATA); /* ...result goes here */</per>
+        <hr>
+        <h4>Command list variable access</h4>
+        <p>
+“Accessing common global variables (PL/I)” shows the capability of updating
+common global variables. This example increments a global variable named
+GVARIABLE by 1. Task global variables are updated and read the same way. The
+            only difference is the pool name TGLOBAL is specified instead of CGLOBAL.</p><p>
+“Accessing stem variables using the PIPE command (PL/I)” shows how to retrieve
+values from a stem variable after issuing a PIPE command with the STEM stage
+command.</p>
+        <h4>Accessing common global variables (PL/I)
+Accessing common global variables (PL/I)</h4>
+        <per>/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL DATA_IN CHAR(24) VAR; /* Holds the input data */
+DCL DATA_IN_LEN FIXED BIN(31,0) INIT(24); /* Max length of input*/
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+/********************************************************************/
+/* Find the value of the variable */
+/********************************************************************/
+CALL CNMVARS(HLBPTR, /* Read the global variable... */
+’GET’, /* ...function is read */
+DATA_IN, /* ...result goes here */
+DATA_IN_LEN, /* ...truncate after 24-bytes */
+’GVARIABLE’, /* ...variable name is GVARIABLE */
+’CGLOBAL’); /* ...variable pool is CGLOBAL */
+DATA_IN=DATA_IN+1; /* Increment Variable */
+/********************************************************************/
+/* Set the global variable */
+/********************************************************************/
+CALL CNMVARS(HLBPTR, /* Update the global variable... */
+’PUT’, /* ...function is write */
+DATA_IN, /* ...data is here */
+’’, /* ...not used */
+’GVARIABLE’, /* ...variable name is GVARIABLE */
+’CGLOBAL’); /* ...variable pool is CGLOBAL */
+Accessing stem variables using the PIPE command (PL/I)
+Accessing stem variables using the PIPE command (PL/I)
+/*********************************************************************/
+/* Other Declarations */
+/*********************************************************************/
+DCL NUMVARS CHAR(4) VARYING; /* Number of variables in stem */
+DCL PIPECMD CHAR(256) VARYING; /* Buffer to hold PIPE command */
+DCL STEMLINE CHAR(80) VARYING; /* Store value of stem variable */
+DCL VARNAME CHAR(15) VARYING; /* Name of stem variable */
+/*********************************************************************/
+/* Execution */
+/*********************************************************************/
+/*********************************************************************/
+/* Build a PIPE command. */
+/* The < (From Disk) stage reads data into the pipeline from */
+              /* MYINFILE, a member of a dataset associated with the ddname */
+/* DSIPARM. The records are treated as single-line messages. */
+/* The NLOCATE stage discards comments lines which begin with */
+/* either ’*’ or ’/*’. */
+/* The STEM stage writes the remaining messages from the pipeline */
+/* to stemmed variables named PIPELINEx. */
+/*********************************************************************/
+PIPECMD = ’PIPE < MYINFILE’||
+’ | NLOCATE 1.1 &*& 1.2 &/*&’||
+’ | STEM PIPELINE’; /* Build PIPE command */
+CNMCOMMAND DATA(PIPECMD); /* Issue PIPE command */
+/*********************************************************************/
+/* Local variable PIPELINE0 contains the character representation of */
+/* the total number of PIPELINEx stem variables. */
+/*********************************************************************/
+VARNAME = ’PIPELINE0’;
+/*********************************************************************/
+/* Get number of stem variables and store value in NUMVARS. */
+/*********************************************************************/
+CNMVARPOOL FUNC(’GET’)
+NAME(VARNAME)
+POOL(’LOCAL’)
+DATA(NUMVARS)
+LENG(4);
+/*********************************************************************/
+/* Local variable PIPELINE1 contains the first non-comment line in */
+/* MYINFILE. */
+/*********************************************************************/
+VARNAME = ’PIPELINE1’;
+/*********************************************************************/
+/* Get first non-comment line and store value in STEMLINE. */
+/*********************************************************************/
+CNMVARPOOL FUNC(’GET’)
+NAME(VARNAME)
+POOL(’LOCAL’)
+DATA(STEMLINE)
+LENG(80);
+For more information about the PIPE command, refer to IBM Tivoli NetView for
+z/OS Programming: Pipes.</per><hr>
+        <h4>Using locks</h4>
+        <p>s
+“Accessing common global variables (PL/I)” on page 70 shows how you can
+update common global variables. However, the example does not provide for
+protecting the updating of the variable named GVARIABLE by using a lock. Assess
+            the need for protecting the updating GVARIABLE on a case-by-case basis.</p><p>
+“Using locks (PL/I)” on page 72 shows how to modify “Accessing common global
+variables (PL/I)” on page 70 to obtain a lock before attempting the update. The
+        lock name can be the same as the global variable, or it can be different.</p><p>
+If you decide that it is important to synchronize the updating of a variable, you
+can use the following lock method, or you can run all the updates on a given task.
+Because only one process can occur on a task at a time, the updates are serialized.
+This can be any task, including the PPT.</p>
+        <pre>Using locks (PL/I)
+DCL DATA_IN CHAR(24) VAR; /* Holds the input data */
+DCL DATA_IN_LEN FIXED BIN(31,0) INIT(24); /* Max length of input */
+/********************************************************************/
+/* Obtain the lock to secure the accuracy of the update */
+/********************************************************************/
+CALL CNMLK(HLBPTR, /* Obtain the Lock ... */
+’LOCK’, /* ...function is obtain lock */
+’GVARIABLE’, /* ...name of the lock */
+’’, /* ...not used */
+’WAIT’); /* ...wait if not available */
+/********************************************************************/
+/* Find out the value of the variable */
+/********************************************************************/
+CALL CNMVARS(HLBPTR, /* Read the global variable... */
+’GET’, /* ...function is read */
+DATA_IN, /* ...result goes here */
+DATA_IN_LEN, /* ...truncate after 24-bytes */
+’GVARIABLE’, /* ...variable name is GVARIABLE */
+’CGLOBAL’); /* ...variable pool is CGLOBAL */
+DATA_IN=DATA_IN+1; /* Increment Variable */
+/********************************************************************/
+/* Set the global variable */
+/********************************************************************/
+CALL CNMVARS(HLBPTR, /* Update the global variable... */
+’PUT’, /* ...function is write */
+DATA_IN, /* ...data is here */
+’’, /* ...not used */
+’GVARIABLE’, /* ...variable name is GVARIABLE */
+’CGLOBAL’); /* ...variable pool is CGLOBAL */
+/********************************************************************/
+/* Release the lock to let other tasks update GVARIABLE */
+/********************************************************************/
+CALL CNMLK(HLBPTR, /* Free the Lock ... */
+’UNLOCK’, /* ...function is free lock */
+’GVARIABLE’, /* ...name of the lock */
+’’, /* ...not used */
+’’); /* ...not used */</pre><hr>
+        <h4>Operator input</h4>
+        <p>t
+“Operator input (PL/I)” shows how to code an HLL command processor to accept
+operator input in single-line mode. The interface is similar to the &PAUSE function
+of the NetView command list language. Input is requested by the application using
+the WAIT FOR OPINPUT command, and retrieved by the application using the
+CNMGETD service routine. The operator can respond by using the GO command.
+See “GO command” on page 177 for more information.</p>
+        <pre>Operator input (PL/I)
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL GETBLOCK CHAR(40); /* Area for the Orig Block */
+DCL GETPTR PTR; /* Pointer to the Orig Block */
+DCL DATA_INCHAR(256) VAR; /* Buffer area for messages */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+PL/I High-Level Language Services
+72 Programming: PL/I and C
+GETPTR=ADDR(GETBLOCK); /* Address the Orig Block */
+CALL CNMSMSG(HLBPTR, /* Send a message... */
+’ENTER OPERATOR INPUT DATA’, /* ...text of message */
+’MSG’, /* ...single line message */
+’OPER’, /* ...to the invoking operator */
+’’); /* ...not used */
+CALL CNMCMD(HLBPTR,’ WAIT 10 SECONDS FOR OPINPUT’); /* Wait... */
+IF HLBRC=CNM_OPINPUT_ON_WAIT THEN
+DO; /* Operator input supplied... */
+CALL CNMGETD(HLBPTR, /* Get the first trapped msg... */
+’GETMSG’, /* ...function is get a msg */
+DATA_IN, /* ...result goes here */
+256, /* ...max input length */
+GETBLOCK, /* ...must provide a work area */
+OPERQ, /* ...message is on OPINPUT QUEUE*/
+1); /* ...get the first one */
+CALL CNMSMSG(HLBPTR, /* Send a message... */
+’OPERATOR INPUT IS:||DATA_IN, /* ...text of message */
+’MSG’, /* ...single line message */
+’OPER’, /* ...to the invoking operator */
+’’); /* ...not used */
+END;
+ELSE /* No operator input supplied */
+CALL CNMSMSG(HLBPTR, /* Send a message... */
+’NO OPERATOR INPUT SUPPLIED’, /* ...text of message */
+’MSG’, /* ...single line message */
+’OPER’, /* ...to the invoking operator */
+’’); /* ...not used */</pre><hr>
+        <h4>VIEW Command processor</h4>
+        <p>nd processor
+“View Command processor (PL/I)” uses the full-screen VIEW command processor
+to create and initialize a local variable called PARM1. The VIEW command
+processor is started, displaying a full-screen panel. For more information, refer to
+the IBM Tivoli NetView for z/OS Customization Guide</p>
+        <per>View Command processor (PL/I)
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL DATA_INCHAR(48) VAR; /* Input buffer for results */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+CNMVARPOOL FUNC(’DCL’) /* Declare to local pool... */
+/* ...prior to invoking VIEW */
+NAME(’PARM1’) /* ...name is Parm1 */
+POOL(’LOCAL’); /* ...the pool is local */
+CNMVARPOOL FUNC(’PUT’) /* Initialize PARM1... */
+DATA(’the contents of parm1 go here’) /* ...data */
+NAME(’PARM1’) /* ...name of local variable */
+POOL(’LOCAL’); /* ...the pool is local */
+/* Invoke the VIEW command. Give the task name as a unique */
+/* name to go on the view stack. */
+CNMCOMMAND DATA(’VIEW ’|| ORIGIN->ORIG_TASK||’ TESTHLL NOMSG NOINPUT’);</per>
+        <p>Figure 2 shows the panel definition that is started by “View Command processor
+(PL/I)” on page 73.</p>
+        <hr><pre>+TESTHLL %TEST THE VIEW COMMAND WITH HLL
+$ ===================================================================
+$
+$ ===================================================================
+$
+$ Example of using the VIEW command with HLL:
+$
+$ Notes: The field below, PARM1,is defined as a variable
+$ by preceding the string PARM1 with an ampersand (&).
+$
+$
+$
+$
+$
+$
+$
+$
+$
+$ INPUT======> &PARM1
+$ ==================================================================
+%Action===>~&CUR
+$
+$</pre><hr>
+        <p>Figure 2. Sample panel definition</p><hr>
+        <h4>Message processing</h4>
+        <p>“Message processing (PL/I)” lists the message attributes of a message. The
+invocation must be a result of an entry in the NetView automation table. This
+example applies to both single-line and multiline messages. Refer to IBM Tivoli
+NetView for z/OS Automation Guide for more information.</p>
+        <per>Message processing (PL/I)
+DCL GETBLOCK CHAR(40); /* Area for the Orig Block */
+DCL GETPTR PTR; /* Pointer to the Orig Block */
+DCL INBUF CHAR(256) VAR; /* Buffer area for messages */
+DCL DATA_IN CHAR(12) VAR; /* Attribute result */
+DCL ATTR(12) CHAR(8) INIT( /* 12 message attributes: */
+’AREAID’ ,’DESC’ ,’JOBNAME’,’JOBNUM’,’MCSFLAG’ ,’MSGTYP’,
+’REPLYID’,’ROUTCDE’,’SESSID’ ,’SMSGID’,’SYSCONID’,’SYSID’);
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+GETPTR=ADDR(GETBLOCK); /* Address the Orig Block */
+CALL CNMGETD(HLBPTR, /* Get the first line of the msg */
+’GETMSG’, /* ...function is get a msg */
+INBUF, /* ...result goes here */
+256, /* ...max input length */
+GETBLOCK, /* ...must provide a work area */
+IDATAQ, /* ...message from automation */
+1); /* ...get the first line of msg */
+DO WHILE(HLBRC=CNM_GOOD /* Loop through the messages... */
+HLBRC=CNM_DATA_TRUNC); /* ...ignoring truncation */
+DO I=1 TO 12; /* For 12 possible attributes... */
+CALL CNMGETA(HLBPTR, /* Get the Ith attribute... */
+ATTR(I), /* ...Ith member of array */
+DATA_IN, /* ...result goes here */
+12, /* ...at most 12 bytes */
+IDATAQ); /* ...on the initial data queue */
+CALL CNMSMSG(HLBPTR,ATTR(I)||’ = ’||DATA_IN,’MSG’,’OPER’,’’);
+        END;
+CALL CNMSMSG(HLBPTR,’LINETYPE = ’||GETPTR->ORIG_BLOCK.ORIG_LINE_TYPE,
+’MSG’,’OPER’,’’);
+CALL CNMSMSG(HLBPTR,’HDRMTYPE = ’||GETPTR->ORIG_BLOCK.ORIG_MSG_TYPE,
+’MSG’,’OPER’,’’);
+CALL CNMSMSG(HLBPTR,’MSGID = ’||GETPTR->ORIG_BLOCK.ORIG_PROCESS,
+’MSG’,’OPER’,’’);
+CALL CNMSMSG(HLBPTR,’MSGSTR = ’||INBUF,
+’MSG’,’OPER’,’’);
+CALL CNMGETD(HLBPTR, /* Get next line of message... */
+’GETLINE’, /* ...function is get next line */
+INBUF, /* ...result goes here */
+255, /* ...max input length */
+GETBLOCK, /* ...must provide a work area */
+IDATAQ, /* ...message is from automation */
+1); /* ...get the next line */
+END; /* Of DO WHILE */
+HLBRC=CNM_GOOD; /* Clear RC */</per><hr>
+        <h4>Command authorization checking</h4>
+        <P>This section describes an example of the command authorization checking
+capabilities provided by the NetView program. You define the operator, the
+operator's authority, and the restrictions on starting the command, keyword, and
+value.
+The command gives the return code that the command authorization checking
+service routine returned to the operator. The syntax for which this command checks is as follows:</P>
+        PSPCCKO
+►► PSPCCKO PARM x ( VAL x ) ►◄<hr>
+        <p>Where:</p><p>
+        PARMx</p>
+<p>Specifies the keyword variable used to perform the authorization check.</p>
+<p>VALx</p>
+        <p>Indicates the value variable used to perform the authorization check.</p><p>
+Before using the example in “Command authorization checking (PL/I) ” on page
+77, perform the following NetView set-up as it applies to your method of
+command authorization checking.</p>
+        <h4>Command authorization checking using CMDAUTH=TABLE</h4>
+        <p>If you are using CMDAUTH=TABLE with TBLNAME=CMDTABLE in NetView
+domain CNM01 in network NETA, perform the following setup before using the
+sample code.</p>
+        <h5>In DSIPARM(CMDTABLE)</h5>
+        <p>Restrict access to the command, keywords, and values as well as the operators and
+classes that can access them</p>
+      <per>The command PSPCCKO can be started by operators in GRP1 and GRP2.
+Operators in GRP1 can issue any keyword or keyword value, but operators in
+GRP2 cannot use the value of VAL1 with keyword PARM2 and cannot issue
+PARM3.
+PROTECT NETA.CNM01.PSPCCKO
+PROTECT NETA.CNM01.PSPCCKO.PARM2
+PROTECT NETA.CNM01.PSPCCKO.PARM2.VAL1
+PROTECT NETA.CNM01.PSPCCKO.PARM3
+PROTECT NETA.CNM01.PSPCCKO.PARM3.VAL1
+GROUP GRP1 OPER1,OPER2,FRANK,BILL,JENNY
+GROUP GRP2 OPER3,OPER4,FRED,LISA,BETH
+GROUP GRP3 JOE
+PERMIT GRP1 NETA.CNM01.PSPCCKO
+PERMIT GRP1 NETA.CNM01.PSPCCKO.PARM2
+PERMIT GRP1 NETA.CNM01.PSPCCKO.PARM2.VAL1
+PERMIT GRP1 NETA.CNM01.PSPCCKO.PARM3
+PERMIT GRP1 NETA.CNM01.PSPCCKO.PARM3.VAL1
+PERMIT GRP2 NETA.CNM01.PSPCCKO
+PERMIT GRP2 NETA.CNM01.PSPCCKO.PARM2</per>
+        <h4>Command authorization checking using CMDAUTH=SAF</h4>
+        <pre>If you are using CMDAUTH=SAF and OPERSEC=SAFDEF in the CNM01 NetView
+domain in the NETA network, perform the following setup before using the
+sample code. RACF®
+is used as the SAF product in this example.
+In RACF
+Restrict access to the command, keywords, and values as well as the operators and
+classes that can access them.
+The command PSPCCKO can be started by operators in GRP1 and GRP2.
+Operators in GRP1 can issue any keyword or keyword value, but operators in
+GRP2 cannot use the value of VAL1 with keyword PARM2 and cannot issue
+PARM3.
+RDEFINE NETCMDS NETA.CNM01.PSPCCKO UACC(NONE)
+RDEFINE NETCMDS NETA.CNM01.PSPCCKO.PARM2 UACC(NONE)
+RDEFINE NETCMDS NETA.CNM01.PSPCCKO.PARM2.VAL1 UACC(NONE)
+RDEFINE NETCMDS NETA.CNM01.PSPCCKO.PARM3 UACC(NONE)
+RDEFINE NETCMDS NETA.CNM01.PSPCCKO.PARM3.VAL1 UACC(NONE)
+ADDGROUP GRP1
+ADDGROUP GRP2
+ADDGROUP GRP3
+CONNECT OPER1 GROUP(GRP1)
+CONNECT OPER2 GROUP(GRP1)
+CONNECT FRANK GROUP(GRP1)
+CONNECT BILL GROUP(GRP1)
+CONNECT JENNY GROUP(GRP1)
+CONNECT OPER3 GROUP(GRP2)
+CONNECT OPER4 GROUP(GRP2)
+CONNECT FRED GROUP(GRP2)
+CONNECT LISA GROUP(GRP2)
+CONNECT BETH GROUP(GRP2)
+CONNECT JOE GROUP(GRP3)
+PERMIT NETA.CNM01.PSPCCKO CLASS(NETCMDS) ID(GRP1) ACCESS(READ)
+PERMIT NETA.CNM01.PSPCCKO.PARM2 CLASS(NETCMDS) ID(GRP1) ACCESS(READ)
+PERMIT NETA.CNM01.PSPCCKO.PARM2.VAL1 CLASS(NETCMDS) ID(GRP1) ACCESS(READ)
+PERMIT NETA.CNM01.PSPCCKO.PARM3 CLASS(NETCMDS) ID(GRP1) ACCESS(READ)
+PERMIT NETA.CNM01.PSPCCKO.PARM3.VAL1 CLASS(NETCMDS) ID(GRP1) ACCESS(READ)
+PERMIT NETA.CNM01.PSPCCKO CLASS(NETCMDS) ID(GRP2) ACCESS(READ)
+PERMIT NETA.CNM01.PSPCCKO.PARM2 CLASS(NETCMDS) ID(GRP2) ACCESS(READ)</pre>
+        <h4>Command authorization checking sample code
+Command authorization checking (PL/I)</h4>
+        <pre>/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL INBUF CHAR(80) VAR; /* Buffer area for messages */
+DCL CMDNAMEV CHAR(8) VAR; /* Command that invoked us */
+DCL KEYWORDV CHAR(8) VAR; /* Keyword of invocation */
+DCL KEYVALUEV CHAR(8) VAR; /* KeyValue of invocation */
+DCL CMDNAME CHAR(8); /* Command that invoked us */
+DCL KEYWORD CHAR(8); /* Keyword of invocation */
+DCL KEYVALUE CHAR(8); /* KeyValue of invocation */
+DCL CNT FIXED BIN(31,0); /* Number of elements parsed */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+/********************************************************************/
+/* Scan the keyword and the value */
+/********************************************************************/
+CALL CNMSCAN(HLBPTR, /* Parse the input ... */
+CMDBUF, /* ...command line is the input */
+/* SYNTAX OF COMMAND IS: */
+/* CMDNAME KEYWORD(KEYVALUE) */
+/* */
+/* Scan for the: */
+’%S’|| /* ...command name */
+’%*{ }’|| /* ...skip over leading blanks */
+’%{¬(}’|| /* ...keyword up to "(" */
+’%*C’|| /* ...skip over "(" */
+’%{¬)}’, /* ...keyvalue up to ")" */
+CNT, /* ...number strings parsed */
+CMDNAMEV, /* ...command goes here */
+KEYWORDV, /* ...keyword goes here */
+KEYVALUEV); /* ...keyvalue goes in here */
+CMDNAME=CMDNAMEV; /* Get fixed length value */
+KEYWORD=KEYWORDV; /* Get fixed length value */
+KEYVALUE=KEYVALUEV; /* Get fixed length value */
+IF CNT=3 THEN /* Enough parms specified? */
+CALL CNMSCOP(HLBPTR, /* Perform authorization checking*/
+CMDNAME, /* ...the command */
+KEYWORD, /* ...the keyword */
+KEYVALUE); /* ...the value */
+ELSE /* Not enough parms specified */
+HLBRC=CNM_BAD_INVOCATION; /* Set rc */
+/********************************************************************/
+/* Inform user of the return code results... */
+/********************************************************************/
+SELECT;
+WHEN(HLBRC=CNM_GOOD)
+DO; /* Operator */
+/* has */
+/* passed */
+END; /* authorization checking */
+WHEN(HLBRC=CNM_KEYWORD_NA)
+CALL CNMSMSG(HLBPTR,’ Not authorized to use KEYWORD ’||KEYWORD,
+’MSG’,’OPER’,’’);
+WHEN(HLBRC=CNM_VALUE_NA)
+CALL CNMSMSG(HLBPTR,’ Not authorized to use VALUE ’||KEYVALUE,
+’MSG’,’OPER’,’’);
+WHEN(HLBRC=CNM_BAD_INVOCATION)
+CALL CNMSMSG(HLBPTR,’ Not enough parms specified’,
+MSG’,’OPER’,’’);
+OTHERWISE
+CALL CNMSMSG(HLBPTR,’ RC not recognized...’||HLBRC,
+’MSG’,’OPER’,’’);
+END;
+HLBRC=CNM_GOOD; /* Clear RC */</pre><hr>
+        <h4>Altering data</h4>
+        <pre>The DSIEX02A installation exit routine changes the echoed command message
+(MSGTYPE=*) to be more informative by giving the time that the command was
+entered.
+Without the exit, the output is:
+WHO
+With the exit, the output is:
+Command entered was: "WHO" at 12:00:00
+Altering data (PL/I)
+DSIEX02A: PROC(HLBPTR,CMDBUF,ORIGBLCK) OPTIONS(MAIN,REENTRANT);
+/********************************************************************/
+/* */
+. . .
+. . .
+. . .
+/* Change Activity: */
+/* date,author: description of changes */
+/********************************************************************/
+/********************************************************************/
+/* */
+/* Operand Declarations */
+/* */
+/********************************************************************/
+DCL HLBPTR PTR; /* Pointer to the HLB */
+%INCLUDE DSIPLI; /* Include the HLL macros */
+DCL CMDBUF CHAR(*) VARYING; /* Buffer for the command */
+DCL ORIGBLCK CHAR(40); /* Area for the Orig Block */
+DCL ORIGIN PTR; /* Pointer to the Orig Block */
+DCL ADDR BUILTIN; /* Built-in function */
+ORIGIN=ADDR(ORIGBLCK); /* Address the Orig Block */
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL GETBLOCK CHAR(40); /* Area for the Orig Block */
+DCL DATAIN CHAR(255) VAR; /* Old command text */
+DCL TIME CHAR(256) VAR; /* Area for time */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+GETPTR=ADDR(GETBLOCK); /* Address the Orig block */
+CNMINFOC /* Retrieve the time... */
+ITEM(’TIME’) /* ...variable is time of day */
+DATA(TIME) /* ...the result goes here */
+LENG(256); /* ...max length of 256 */
+CNMGETDATA /* Peek the msg before altering */
+FUNC(’PEEKLINE’) /* ...subfunction is PEEK */
+QUEUE(IDATAQ) /* ...initial data queue */
+DATA(DATAIN) /* ...result goes here */
+PL/I High-Level Language Services
+78 Programming: PL/I and C
+LENG(256) /* ...max length is 256 */
+ORIGIN(GETBLOCK) /* ...use new Orig block */
+LINE(1); /* ...check the first line */
+IF GETPTR->ORIG_MSG_TYPE =’*’ THEN /* Echo’ed message? */
+CNMALTDATA /* Replace the text ... */
+FUNC(’REPLINE’) /* ...function is replace */
+QUEUE(IDATAQ) /* ...initial data queue */
+DATA(’Command entered was: "’||DATAIN||’" at ’||TIME)
+/* ...text of new message */
+ORIGIN(GETBLOCK) /* ...use Peeked Orig block */
+LINE(1); /* ...replace the first line */
+HLBRC=CNM_GOOD; /* Clear RC */
+END DSIEX02A;</pre><hr>
+        <h4>Storage access</h4>
+        <p>
+“Storage Access (PL/I)” shows how to display the character representation of the
+contents of the storage that the NetView program can access. For example, after
+locating the address of the main vector table using DISPMOD DSIMNTEX, you can
+display the first 4 bytes of the DSIMVT control block.</p>
+        <pre>Storage Access (PL/I)
+DCL NUM_PARMS FIXED BIN(31); /* Number of parms passed */
+DCL XADDR FIXED BIN(31); /* Hex value of source_ptr */
+DCL NUM_BYTES FIXED BIN(31); /* Number of bytes to display */
+DCL INPUT_BFR CHAR(4096); /* Buffer where data is copied */
+DCL SOURCE_PTR PTR; /* Address to copy from */
+DCL I FIXED BIN(31); /* Work counter */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+CNMSSCAN DATA(CMDBUF) /* Scan the command for: */
+FORMAT(’%*S’|| /* ...skip the command */
+’%X’|| /* ...save the source address */
+’%X’) /* ...save the length */
+COUNT(NUM_PARMS) /* ...number of parms scanned */
+P1(XADDR) /* ...the address to display */
+P2(NUM_BYTES); /* ...for this number of bytes */
+SELECT;
+WHEN(NUM_PARMS¬=2) /* Did they give an address and
+... a length? */
+CNMSENDMSG /* No, give error message... */
+DATA(’INVALID NUMBER OF OPERANDS’) /* ...text */
+MSGTYPE(’MSG’) /* ... message */
+DESTTYPE(’OPER’); /* ... to the operator */
+WHEN(NUM_BYTES<=0) /* Did they give a valid length ?*/
+CNMSENDMSG /* No, give error message... */
+DATA(’INVALID LENGTH GIVEN’) /* ...text */
+MSGTYPE(’MSG’) /* ... message */
+DESTTYPE(’OPER’); /* ... to the operator */
+WHEN(NUM_BYTES>=4096) /* Did they give a valid length ?*/
+CNMSENDMSG /* No, give error message... */
+DATA(’INVALID LENGTH GIVEN, MUST BE LESS THAN ’||
+’OR EQUAL TO FFF’) /* ...text of message */
+MSGTYPE(’MSG’) /* ... message */
+DESTTYPE(’OPER’); /* ... to the operator */
+OTHERWISE
+DO;
+UNSPEC(SOURCE_PTR) = UNSPEC(XADDR); /* assign value into a ptr */
+CNMCOPYSTR /* Copy storage */
+PL/I High-Level Language Services
+Chapter 7. PL/I high-level language services 79
+FROM(SOURCE_PTR) /* ...from the address given */
+TO(ADDR(INPUT_BFR)) /* ...to the internal buffer */
+LENG(NUM_BYTES) /* ...for up to FFF bytes */
+COPYTYPE(’FIXTOFIX’); /* ...data is fixed len vars */
+IF HLBRC = CNM_GOOD THEN /* Good RC ? */
+DO I=1 TO NUM_BYTES BY 64; /* Display storage */
+CNMSENDMSG DATA(SUBSTR(INPUT_BFR,I,64)) /* ...64-byte */
+MSGTYPE(’MSG’) /* ...in a message */
+DESTTYPE(’OPER’); /* ...to the operator */
+END;
+ELSE /* Bad RC -- */
+CNMSENDMSG /* Send message ... */
+DATA(’INVALID OR PROTECTED ADDRESS’) /* ...text */
+MSGTYPE(’MSG’) /* ...in a message */
+DESTTYPE(’OPER’); /* ...to the operator */
+END; /* of otherwise */
+END; /* of select */ </0)></pre><hr>
+        <h4>Data set access</h4>
+        <p>ess
+“Data set access (PL/I)” contains sample code for opening (CNMMEMO), reading
+(CNMMEMR), and closing (CNMMEMC) NetView partitioned data sets. This
+example reads the CNMSTYLE member and displays the contents to the operator.</p>
+        <pre>Data set access (PL/I)
+DCL MEMBER CHAR(8); /* Member name to read */
+DCL DDNAME CHAR(8); /* DDNAME to read */
+DCL TOKEN FIXED BIN(31,0); /* Token used to match open to
+...read and close */
+DCL MRDATA CHAR(80) VAR; /* Line that is read */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+DDNAME=’DSIPARM’;
+MEMBER=’CNMSTYLE’;
+/********************************************************************/
+/* OPEN THE MEMBER */
+/********************************************************************/
+CALL CNMMEMO(HLBPTR, /* Open the data set member ... */
+TOKEN, /* ... token returned by HLL */
+DDNAME, /* ... ddname of PDS */
+MEMBER); /* ... member name of PDS */
+IF HLBRC¬=CNM_GOOD THEN
+CALL CNMSMSG(HLBPTR, /* OPEN failed... */
+’OPEN FOR DATA SET FAILED RC=’||CHAR(HLBRC),
+’MSG’, /* ...single line message */
+’OPER’, /* ...to the operator */
+’’); /* ...taskname ignored */
+ELSE
+DO; /* Open was successful... */
+/****************************************************************/
+/* READ THE MEMBER */
+/****************************************************************/
+CALL CNMMEMR(HLBPTR, /* Read the first record... */
+TOKEN, /* ... provide token from OPEN */
+MRDATA, /* ... result goes here */
+80); /* ... read 80 bytes */
+DO WHILE (HLBRC=CNM_GOOD); /* Read til EOF */
+CALL CNMSMSG(HLBPTR, /* Write out last record read... */
+SUBSTR(MRDATA,1,72),/* ...write first 72 bytes */
+’MSG’, /* ...single line message */
+’OPER’, /* ...to the operator */
+’’); /* ...taskname ignored */
+PL/I High-Level Language Services
+80 Programming: PL/I and C
+CALL CNMMEMR(HLBPTR, /* Read the next record... */
+TOKEN, /* ... provide token from OPEN */
+MRDATA, /* ... result goes here */
+80); /* ... read 80 bytes */
+END;
+/****************************************************************/
+/* CLOSE THE MEMBER */
+/****************************************************************/
+CALL CNMMEMC(HLBPTR, /* Close the PDS member... */
+TOKEN); /* ... using the token from OPEN */
+END; /* End of Open was successful... *</pre><hr>
+        <h4>Communicating with devices</h4>
+        <p>The NetView program provides the CNMCNMI service routine for use in
+communicating with devices in the network through the CNMI. You can access
+any data that is returned using the CNMGETD service routine to retrieve records
+from the CNMI solicited data queue (CNMIQ).</p>
+        <p>“CNMCNMI service routine (PL/I)” uses the CNMCNMI service routine to send a
+request for product set ID data to a specified PU. Any data returned is sent as a
+message to the operator. The syntax of the command is</p>
+        <h6>PNMVTPU</h6>
+        <pre class="cgraphic"><span>
+ 
+                  .-&nbsp;OWN-.
+&gt;&gt;-PNMVTPU<em>&nbsp;puname</em>-+------+-------------------------------------&gt;&lt;
+                  '-&nbsp;ALL-'
+ </span>
+</pre>
+        <pre>Where:
+ALL
+Specifies that vital product data is to be retrieved for the PU and its attached
+ports.
+OWN
+Specifies that vital product data is to be retrieved for the PU only. This
+keyword is the default.
+puname
+Is the name of the PU from which vital product data is received. This
+parameter is required.
+CNMCNMI service routine (PL/I)
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL RCODE FIXED BIN(31,0); /* Return code */
+DCL COUNT FIXED BIN(31,0); /* Count of Scanned args */
+DCL PUNAMEV CHAR(8) VAR; /* PUNAME varying length */
+DCL PUNAME CHAR(8); /* PUNAME fixed length */
+DCL GETBLOCK CHAR(40); /* Area for the work orig block */
+DCL GETPTR PTR; /* Pointer to the work Orig Block*/
+DCL DATAIN CHAR(1024) VAR; /* Buffer for the RU */
+DCL OWNORALL CHAR(8) VAR; /* Own or all placeholder */
+/********************************************************************/
+PNMVTPU
+►►
+OWN
+PNMVTPU puname
+ALL
+►◄
+PL/I High-Level Language Services
+Chapter 7. PL/I high-level language services 81
+/* */
+/* Vital Product Data RU definitions */
+/* */
+/* From the VTAM Programming Manual, a forward RU is defined below */
+/* */
+/* Byte Value Description */
+/* 0 81 Network services, logical services */
+/* 1 08 Management services */
+/* 2 10 Request code */
+/* 3 00 Format 0 */
+/* 4 00 Ignore target names, */
+/* Solicit a reply, and */
+/* No CNM header contained */
+/* 5 00 Reserved */
+/* 6-7 000E Length of NS RU */
+/* 8-15 NS RU -- NMVT -- documented in SNA Ref Sum */
+/* 8-A 41038D NS Header for NMVT */
+/* B-C 0000 Retired */
+/* D-E 0111 PRID */
+/* F 00 unsolicited NMVT, */
+/* only NMVT for this PRID */
+/* 10-16 One MS major vector */
+/* 10-11 0006 Length field of PSID (Product Set ID) vector */
+/* 12-13 8090 Code point for PSID */
+/* 14-15 Length of subvector */
+/* 14 02 Length of subvector */
+/* 15 81 Request information on control unit only */
+/* 15 83 Request information on control unit and its */
+/* attached devices */
+/* 16 F1 From VTAM programming, PU */
+/* 17 08 Length of PU name */
+/* 18 PUNAME Eight byte PUNAME, left justified */
+/* 20 00 End of RU */
+/********************************************************************/
+DCL FORWARD_RU CHAR(100) VAR INIT(
+’810810000000000E41038D00000111000006809002’X);
+DCL OWN CHAR(1) VAR INIT(’81’X);
+DCL ALL CHAR(1) VAR INIT(’83’X);
+DCL PUNAME_HDR CHAR(2) VAR INIT(’F108’X);
+DCL ENDOFRU CHAR(1) VAR INIT(’00’X);
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+RCODE=0; /* Initialize return code */
+GETPTR=ADDR(GETBLOCK); /* Address the work Orig Block */
+CALL CNMSCAN(HLBPTR, /* Scan the command line... */
+CMDBUF, /* ...input in command line */
+’%*S0S’, /* ...skip over the command */
+COUNT, /* ...number of args parsed */
+PUNAMEV, /* ...puname */
+OWNORALL); /* ...own or all specified */
+PUNAME=PUNAMEV; /* Get fixed length PU name */
+SELECT;
+WHEN(COUNT=1) /* Own or All not specified */
+FORWARD_RU=FORWARD_RU||OWN||PUNAME_HDR||PUNAME||ENDOFRU;
+/* Default is OWN */
+WHEN(OWNORALL=’OWN’) /* Own or All not specified */
+FORWARD_RU=FORWARD_RU||OWN||PUNAME_HDR||PUNAME||ENDOFRU;
+/* Process OWN */
+WHEN(OWNORALL=’ALL’) /* Own or All not specified */
+FORWARD_RU=FORWARD_RU||ALL||PUNAME_HDR||PUNAME||ENDOFRU;
+OTHERWISE /* Invalid parm... tell user */
+DO;
+PL/I High-Level Language Services
+82 Programming: PL/I and C
+CALL CNMSMSG(HLBPTR,’INVALID COMMAND SYNTAX’, /* wrong... */
+’MSG’,’TASK’,ORIGIN ->ORIG_TASK); /* ...syntax */
+RCODE=8; /* Bad syntax */
+END;
+END; /* Of Select */
+IF RCODE = 0 THEN /* Good so far? */
+DO; /* Yes, continue */
+CALL CNMCNMI(HLBPTR, /* Send RU over the CNMI... */
+’SENDRPLY’, /* ...expect a reply */
+FORWARD_RU, /* ...RU built above */
+PUNAME, /* ...to the PUNAME specified */
+180); /* ...timeout after 3 minutes */
+IF HLBRC=CNM_GOOD THEN /* Everything OK? */
+DO; /* Yes, continue */
+CALL CNMGETD(HLBPTR, /* Read in the first RU returned */
+’GETLINE’, /* ...a single RU */
+DATAIN, /* ...into here */
+1024, /* ...truncate after 1024-bytes */
+GETBLOCK, /* ...provide a new origblock */
+CNMIQ, /* ...on the CNMI queue */
+1); /* ...the first RU */
+DO WHILE(HLBRC=CNM_GOOD); /* End of queue reached? */
+CALL CNMSMSG(HLBPTR, /* Send info to the operator... */
+DATAIN, /* ...from here */
+’MSG’, /* ...issue message */
+’TASK’, /* ...to the task */
+ORIGIN ->ORIG_TASK); /* ...that originated request*/
+CALL CNMGETD(HLBPTR, /* Read in the next RU returned */
+’GETLINE’, /* ...a single RU */
+DATAIN, /* ...into here */
+1024, /* ...truncate after 1024-bytes */
+GETBLOCK, /* ...provide a new origblock */
+CNMIQ, /* ...on the CNMI queue */
+1); /* ...the next RU */
+END; /* of DO WHILE */
+END; /* Of everything ok */
+ELSE
+DO; /* CNMI error */
+SELECT(HLBRC);
+WHEN(CNM_BAD_INVOCATION) /* Not invoked under a DST */
+CALL CNMSMSG(HLBPTR,’Must run under a DST’,
+’MSG’,’TASK’,ORIGIN ->ORIG_TASK);
+WHEN(CNM_TIME_OUT) /* PU never answered request */
+CALL CNMSMSG(HLBPTR,’PU never answered’,
+’MSG’,’TASK’,ORIGIN ->ORIG_TASK);
+WHEN(CNM_NEG_RESPONSE) /* PU gave a negative response */
+CALL CNMSMSG(HLBPTR,’PU gave a negative response’,
+’MSG’,’TASK’,ORIGIN ->ORIG_TASK);
+OTHERWISE
+CALL CNMSMSG(HLBPTR,’CNMI request failed RC=’||
+CHAR(HLBRC),’MSG’,’TASK’,ORIGIN->ORIG_TASK);
+END; /* Of Select */
+END; /* of CNMI error */
+END; /* of Good so far */
+HLBRC=RCODE; /* Issue rc */</pre><hr>
+        <h4>Performing I/O on a VSAM file (Keyed File Access)</h4>
+        <p>Keyed File Access (PL/I)” on page 84 shows coding a NetView HLL command
+processor that allows I/O to a VSAM file through the CNMKIO service routine.
+The command processor must run on a DST. Use either the CNMSMSG service
+routine (with a type of COMMAND) or the EXCMD command</p>
+        <pre>Keyed File Access (PL/I)” creates a database with five records and the following
+keys and data:
+Key Data
+01 A
+02 B
+03 C
+04 D
+05 E
+Keyed File Access (PL/I)
+DCL REC CHAR(10) VAR; /* Record that is output */
+DCL INREC CHAR(10) VAR; /* Input record */
+DCL KEY CHAR(2) VAR; /* Key to record */
+DCL OUTDATA(5) CHAR(8) VAR INIT( /* Data */
+’A’,’B’,’C’,’D’,’E’);
+DCL KEYDATA(5) CHAR(2) VAR INIT( /* Keys */
+’01’,’02’,’03’,’04’,’05’);
+/********************************************************************/
+/* Execution -- WRITE OUT 5 RECORDS... */
+/* */
+/* PUT DIRECT must be used for new records, and PUT UPDATE must */
+/* be used for existing records. Therefore, we use GET EQUAL */
+/* to determine if the record is new or not. If new, then a PUT */
+/* DIRECT will follow...if not, then a PUT UPDATE follows. */
+/* */
+/********************************************************************/
+DO I = 1 TO HBOUND(OUTDATA,1); /* For 5 records */
+KEY=KEYDATA(I); /* Set key portion of record */
+REC=KEY||OUTDATA(I); /* Record must have key first */
+CALL CNMKIO(HLBPTR, /* Provide HLB pointer... */
+’GET_EQ’, /* ... requesting a get */
+INREC, /* ... data is in inrec */
+10, /* ... 10 bytes max input */
+KEY, /* ... key is in key */
+’UPDATE’); /* ... this is an update */
+IF HLBRC=CNM_NOT_FOUND THEN
+DO;
+CALL CNMKIO(HLBPTR, /* Provide HLB pointer... */
+’PUT’, /* ... requesting a put */
+REC, /* ... data is in rec */
+0, /* ... not used */
+KEY, /* ... key is in key */
+’DIRECT’); /* ... this is not an update */
+IF HLBRC¬=CNM_GOOD THEN
+CALL CNMSMSG(HLBPTR, /* Issue error message... */
+’CNMKEYIO PUT REQUEST FAILED, RC=’||CHAR(HLBRC),
+/* ... text of message */
+’MSG’, /* ... single line message */
+’TASK’, /* ... to the task */
+ORIGIN->ORIG_BLOCK.ORIG_TASK); /* ...that invoked */
+END;
+ELSE
+CALL CNMKIO(HLBPTR, /* Provide HLB pointer... */
+’PUT’, /* ... requesting a put */
+REC, /* ... data is in rec */
+0, /* ... not used */
+KEY, /* ... key is in key */
+’UPDATE’); /* ... this is an update */
+IF HLBRC¬=CNM_GOOD THEN
+CALL CNMSMSG(HLBPTR, /* Issue error message... */
+’CNMKEYIO PUT REQUEST FAILED, RC=’||CHAR(HLBRC)
+        /* ... text of message */
+’MSG’, /* ... single line message */
+’TASK’, /* ... to the task */
+ORIGIN->ORIG_BLOCK.ORIG_TASK); /* ...that invoked */
+END;
+/********************************************************************/
+/* READ IN THE 5 RECORDS... */
+/********************************************************************/
+DO I = 1 TO HBOUND(OUTDATA,1); /* For 5 records */
+KEY=KEYDATA(I); /* Set key portion of record */
+CALL CNMKIO(HLBPTR, /* Provide HLB pointer... */
+’GET_EQ’, /* ... requesting a get */
+INREC, /* ... data is in inrec */
+10, /* ... 10 bytes max input */
+KEY, /* ... key is in key */
+’NOUPDATE’); /* ... this is not an update */
+IF HLBRC¬=CNM_GOOD THEN
+CALL CNMSMSG(HLBPTR, /* Issue error message... */
+’CNMKEYIO GET REQUEST FAILED, RC=’||CHAR(HLBRC),
+/* ... text of message */
+’MSG’, /* ... single line message */
+’TASK’, /* ... to the task */
+ORIGIN->ORIG_BLOCK.ORIG_TASK); /* ...that invoked */
+END;
+HLBRC=CNM_GOOD; /* Issue clean rc */</pre><hr>
+        <h4>Coding a DST installation exit</h4>
+        <pre>PPRMVDB: PROC(HLBPTR,CMDBUF,ORIGBLCK) OPTIONS(MAIN,REENTRANT);
+/********************************************************************/
+/* */
+/* Descriptive Name: High Level Language PL/I DSIXITVN Example */
+/* */
+. . .
+. . .
+. . .
+/* Change Activity: */
+/* date,author: description of changes */
+/* */
+/********************************************************************/
+/********************************************************************/
+/* */
+/* Operand Declarations */
+/* */
+/********************************************************************/
+DCL HLBPTR PTR; /* Pointer to the HLB */
+%INCLUDE DSIPLI; /* Include the HLL macros */
+DCL CMDBUF CHAR(*) VARYING; /* Buffer for the command */
+DCL ORIGBLCK CHAR(40); /* Area for the Orig Block */
+DCL ORIGIN PTR; /* Pointer to the Orig Block */
+DCL ADDR BUILTIN; /* Built-in function */
+ORIGIN=ADDR(ORIGBLCK); /* Address the Orig Block */
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL KEY CHAR(2) VAR; /* 2-byte key of the record */
+PL/I High-Level Language Services
+Chapter 7. PL/I high-level language services 85
+/********************************************************************/
+/* */
+/* Execution - */
+/* */
+/* Create the record to initialize the VSAM database. The */
+/* record will have a key of 0000 and a value of "Low rec". */
+/* Setting the HLBRC to USERSWAP (8) will cause the contents */
+/* of CMDBUF to be swapped into the database, thereby giving */
+/* it an initial value, and enabling the subsequent VSAM I/O. */
+/* */
+/********************************************************************/
+KEY=’0000’X; /* Set key to low values */
+CMDBUF=KEY||’Low rec’; /* Build the data record */
+HLBRC=USERSWAP; /* Set USERSWAP rc */
+END PPRMVDB;</pre>
+<pre>PPRMVDB: PROC(HLBPTR,CMDBUF,ORIGBLCK) OPTIONS(MAIN,REENTRANT);
+/********************************************************************/
+/* */
+/* Descriptive Name: High Level Language PL/I DSIXITVN Example */
+/* */
+. . .
+. . .
+. . .
+/* Change Activity: */
+/* date,author: description of changes */
+/* */
+/********************************************************************/
+/********************************************************************/
+/* */
+/* Operand Declarations */
+/* */
+/********************************************************************/
+DCL HLBPTR PTR; /* Pointer to the HLB */
+%INCLUDE DSIPLI; /* Include the HLL macros */
+DCL CMDBUF CHAR(*) VARYING; /* Buffer for the command */
+DCL ORIGBLCK CHAR(40); /* Area for the Orig Block */
+DCL ORIGIN PTR; /* Pointer to the Orig Block */
+DCL ADDR BUILTIN; /* Built-in function */
+ORIGIN=ADDR(ORIGBLCK); /* Address the Orig Block */
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL KEY CHAR(2) VAR; /* 2-byte key of the record */
+PL/I High-Level Language Services
+Chapter 7. PL/I high-level language services 85
+/********************************************************************/
+/* */
+/* Execution - */
+/* */
+/* Create the record to initialize the VSAM database. The */
+/* record will have a key of 0000 and a value of "Low rec". */
+/* Setting the HLBRC to USERSWAP (8) will cause the contents */
+/* of CMDBUF to be swapped into the database, thereby giving */
+/* it an initial value, and enabling the subsequent VSAM I/O. */
+/* */
+/********************************************************************/
+KEY=’0000’X; /* Set key to low values */
+CMDBUF=KEY||’Low rec’; /* Build the data record */
+HLBRC=USERSWAP; /* Set USERSWAP rc */
+        END PPRMVDB;</pre><hr>
+<h4>Coding an installation exit</h4>
+<pre>“Coding an installation exit (PL/I)” shows coding an installation exit routine,
+DSIEX03, that sets a task global variable equal to the last time a command was
+entered on the system. If the last command was the PSNDDAT command, the task
+global variable is not set. The PSNDDAT command is used to receive the variable
+value. See “Sending data (PL/I)” on page 89.
+Coding an installation exit (PL/I)
+PSETTG: PROC(HLBPTR,CMDBUF,ORIGBLCK) OPTIONS(MAIN,REENTRANT);
+/********************************************************************/
+/* */
+/* Descriptive Name: High Level Language PL/I DSIEX03 Example */
+.
+.
+.
+/* Change Activity: */
+/* date,author: description of changes */
+/* */
+/********************************************************************/
+/********************************************************************/
+/* */
+/* Operand Declarations */
+/* */
+/********************************************************************/
+DCL HLBPTR PTR; /* Pointer to the HLB */
+%INCLUDE DSIPLI; /* Include the HLL macros */
+DCL CMDBUF CHAR(*) VARYING; /* Buffer for the command */
+DCL ORIGBLCK CHAR(40); /* Area for the Orig Block */
+DCL ORIGIN PTR; /* Pointer to the Orig Block */
+DCL ADDR BUILTIN; /* Built-in function */
+ORIGIN=ADDR(ORIGBLCK); /* Address the Orig Block */
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL TIME CHAR(256) VAR; /* Time last command entered */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+IF INDEX(CMDBUF,’PSNDDAT’)¬=1 THEN /* Command other than PSNDDAT? */
+DO; /* Yes... */
+CNMINFOC /* Gather NetView information... */
+ITEM(’TIME’) /* ...what time is it? */
+DATA(TIME) /* ...answer goes here */
+LENG(256); /* ...length of time */
+CNMVARPOOL FUNC(’PUT’) /* Put answer in task global... */
+PL/I High-Level Language Services
+86 Programming: PL/I and C
+NAME(’LAST_COMMAND_TIME’) /* ...by the name of... */
+POOL(’TGLOBAL’) /* ...task global pool */
+DATA(TIME); /* ...information in TIME */
+END;
+HLBRC=USERASIS; /* Clear RC */
+END PSETTG;</pre><hr>
+<h4>Coding the WAIT FOR DATA function</h4>
+<p>PWATDAT and PSNDDAT are standard command processors that can be started
+from an installation exit. The following sections describe sending messages with a
+type of request, waiting on the response, and parsing the results. The code in this
+example is the PWATDAT command.
+The syntax of the command is:</p>
+     <pre class="cgraphic"><span>
+ 
+                  
+&gt;&gt;-PNMVTPU<em>&nbsp;taskname</em>-+------+-------------------------------------&gt;&lt;
+         Figure 3. Syntax for PWATDAT         '
+ </span>
+</pre>
+<pre>Where:
+taskname
+Specifies the task global variable set by the installation exit and retrieved by
+the PSNDDAT command.
+Figure 4 on page 88 shows the flow of the WAIT FOR DATA function.
+PWATDAT
+►► PWATDAT taskname ►◄ 
+PL/I High-Level Language Services
+</pre>
+      <table>
+          <tr>
+          <th>Requesting Data  
+          </th>
+              <th>ending Dat</th>
+              
+          </tr><br>
+          <tr>
+          <td>.The requesting OST
+invokes PWATDAT and
+specifies the target
+OST to which to send
+the request</td>
+          </tr><br>
+          <tr><td>.PWATDAT uses
+CNMSMSG to
+send the request
+to the target OST.</td></tr>
+          <tr><td>Waiting for Data</td></tr>
+          <tr><td>The requesting OST
+issues a WAIT FOR
+DATA.</td>
+          <td>.The PSNDDAT command
+is invoked on the
+target OST and finds
+the task global
+variable set by
+DSIEX03.</td></tr>
+          <tr><td></td><td>.CNMSMSG is invoked to
+send the value
+retrieved. The type
+used in the CNMSMSG
+is DATA.</td></tr>
+          <tr><td>he WAIT FOR DATA is
+satisfied and a
+message is issued.</td></tr>
+        </table> 
+        <br>
+        <h6>Figure 4. Flow of the WAIT FOR DATA Function (PL/I)</h6>
+        <h4>Requesting data (PL/I)</h4>
+        <p>The declaration “Requesting data (PL/I)” shows how to request data. The example
+finds the last time that a command was entered on the given operator station task
+(OST). A task global variable, LAST_COMMAND_TIME, is set by DSIEX03. See
+“Coding an installation exit” on page 86.
+This indefinite value is retrieved by the PSNDDAT command that is started on the
+target task. See “Sending data (PL/I)” on page 89.</p>
+        <h4>Requesting data (PL/I)</h4>
+        <pre>Requesting data (PL/I)
+/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/********************************************************************/
+DCL GETBLOCK CHAR(40), /* Area for the Orig Block */
+NEWMSG CHAR(256) VAR, /* Message sent from PSNDDAT */
+TARGTASK CHAR(8) VAR, /* Task of inquiry */
+Requesting Data
+The requesting OST
+invokes PWATDAT and
+specifies the target
+OST to which to send
+the request.
+PWATDAT uses
+CNMSMSG to
+send the request
+to the target OST.
+The requesting OST
+issues a WAIT FOR
+DATA.
+The PSNDDAT command
+is invoked on the
+target OST and finds
+the task global
+variable set by
+DSIEX03.
+CNMSMSG is invoked to
+send the value
+retrieved. The type
+used in the CNMSMSG
+is DATA.
+Waiting for Data
+The WAIT FOR DATA is
+satisfied and a
+message is issued.
+Sending Data
+Figure 4. Flow of the WAIT FOR DATA Function (PL/I)
+PL/I High-Level Language Services
+88 Programming: PL/I and C
+TARGTASKF CHAR(8); /* Task of inquiry */
+DCL PARMCNT FIXED BIN(31); /* Number of parms scanned */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+CNMSSCAN DATA(CMDBUF) /* Scan the input command... */
+FORMAT(’%*S%S’) /* ...skip the command */
+COUNT(PARMCNT) /* ...number of parms */
+P1(TARGTASK); /* ...target task */
+IF PARMCNT=1 THEN /* Was the target task entered? */
+DO; /* Syntax ok... */
+TARGTASKF=TARGTASK; /* Put into fixed length string */
+CNMSENDMSG DATA(’PSNDDAT’) /* Invoke PSNDDAT command */
+MSGTYPE(’REQUEST’) /* ...type is request */
+DESTTYPE(’TASK’) /* ...on a task */
+DEST(TARGTASKF); /* ...specified by input */
+CNMCOMMAND DATA(’WAIT 120 SECONDS FOR DATA’);
+IF HLBRC ¬= CNM_DATA_ON_WAIT THEN /* Wait successful ? */
+CNMSENDMSG /* No... */
+DATA(’Wait for data abnormally ended’) /*...text */
+MSGTYPE(’MSG’) /* ...message */
+DESTTYPE(’OPER’); /* ...to the operator */
+ELSE /* Wait was successful */
+DO; /* Process the results */
+CNMGETDATA FUNC(’GETMSG’) /* Read in the response... */
+QUEUE(DATAQ) /* ...on the data queue */
+DATA(NEWMSG) /* ...read into NEWMSG variable */
+LENG(256) /* ...give plenty of room */
+ORIGIN(GETBLOCK); /* ...provide a different org blk*/
+/* REMOVE PROCESS ID FROM THE BUFFER !!!! */
+/* First 8 bytes must be removed */
+NEWMSG = SUBSTR(NEWMSG,9);
+CNMSENDMSG /* Inform user... */
+DATA(NEWMSG) /* ...message is in NEWMSG */
+MSGTYPE(’MSG’) /* ...message */
+DESTTYPE(’OPER’); /* ...to the operator */
+END; /* of process the results */
+END; /* of Syntax ok */
+ELSE /* Target task not entered... */
+CNMSENDMSG /* Inform user... */
+DATA(’Target task required’) /* ...Syntax error */
+MSGTYPE(’MSG’) /* ...message */
+DESTTYPE(’OPER’); /* ...to the operator */</pre>
+        <h4>Sending data (PL/I)</h4>
+        <p>The purpose of the code in “Sending data (PL/I)” is to find the last time that a
+command was entered on the given task. A task global variable,
+LAST_COMMAND_TIME, is set by DSIEX03. See “Coding an installation exit” on
+page 86.
+This value is retrieved by the PSNDDAT command that is started by the
+PWATDAT command on the target task. See “Coding the WAIT FOR DATA
+function” on page 87. This command processor is run when the PSNDDAT
+command is started at the requesting OST.</p>
+        <h5>Sending data (PL/I)</h5>
+        <pre>/********************************************************************/
+/* */
+/* Other Declarations */
+/* */
+PL/I High-Level Language Services
+Chapter 7. PL/I high-level language services 89
+/********************************************************************/
+DCL TIME CHAR(256) VAR; /* Time the last command was
+...entered */
+DCL MYOPID CHAR(8) VAR; /* Operator ID that we are running
+...under */
+/********************************************************************/
+/* */
+/* Execution */
+/* */
+/********************************************************************/
+CNMINFOC /* Determine my opid... */
+ITEM(’OPID’) /* ...variable is opid */
+DATA(MYOPID) /* ...put result here */
+LENG(8); /* ...truncate after 8 bytes */
+IF MYOPID=ORIGIN->ORIG_BLOCK.ORIG_TASK THEN /* Command issued ...
+...directly or target task
+...was same as operators task */
+CNMSENDMSG /* Not allowed... */
+DATA(’Invalid syntax’) /*...text of message */
+MSGTYPE(’MSG’) /* ...message is a single line */
+DESTTYPE(’OPER’); /* ...to a operator */
+ELSE
+DO;
+CNMVARPOOL /* Retrieve last time variable */
+FUNC(GET) /* ...read in the value */
+NAME(’LAST_COMMAND_TIME’) /* ...of the variable */
+POOL(’TGLOBAL’) /* ...in the task global pool */
+DATA(TIME) /* ...into time */
+LENG(256); /* ...truncate at 256 */
+IF (HLBRC=CNM_GOOD) THEN /* Variable set? */
+CNMSENDMSG /* Yes, continue... */
+DATA(ORIGIN->ORIG_PROCESS ||/* ...must put the process ID in */
+’Last command entered at : "’|| /* ...text of message */
+TIME||’"’) /* ... more text */
+MSGTYPE(’DATA’) /* ...message is data */
+DESTTYPE(’TASK’) /* ...to a task */
+DEST(ORIGIN->ORIG_TASK); /* ...that invoked us */
+ELSE
+CNMSENDMSG /* No, inform user... */
+DATA(ORIGIN->ORIG_PROCESS || /* ...must put in process ID */
+’Must install DSIEX03 to set TIME variable OR no ’||
+’command entered yet on that task’)
+MSGTYPE(’DATA’) /* ...message is data */
+DESTTYPE(’TASK’) /* ...to a task */
+DEST(ORIGIN->ORIG_TASK); /* ...that invoked us */
+END;</pre><hr>
+        <h4>Automating MSUs</h4>
+        <pre>MSUs
+“Automating MSUs (PL/I)” shows a routine to send an MSU directly to the
+automation table for evaluation.
+Automating MSUs (PL/I)
+/********************************************************************/
+/* Other declarations */
+/********************************************************************/
+DCL MSGTOOP CHAR(80) VARYING; /* Message buffer */
+DCL NMVT CHAR(200) VARYING; /* Variable that contains the RU */
+DCL ORIGIN PTR;
+/********************************************************************/
+/* Initialization */
+/********************************************************************/
+ORIGIN=ADDR(ORIGBLCK); /* Address of the Origin Block */
+PL/I High-Level Language Services
+90 Programming: PL/I and C
+NMVT = ’008E41038D0000000010’X||
+’00860000’X||
+’1A00D5C5E3E5C9C5E640’X||
+’C1E4E3D6D4C1E3C5E240’X||
+’C1D3C5D9E3E2’X||
+’0893000110213111’X||
+’0B92800001B0048CD5AA63’X||
+’180516100807C940D3D6E5C5FF00’X||
+’08D5C5E3E5C9C5E6FF11’X||
+’1E96060122E233D30384DD0382AA’X||
+’0382BB0382CC0382DD048144A3038333’X||
+’219808010000000431820382AA’X||
+’0382BB0382CC08010000000237450382DD0382EE’X;
+/********************************************************************/
+/* Drive the Automation Table with the MSU. */
+/********************************************************************/
+CALL CNMAUTO(HLBPTR,NMVT);
+MSGTOOP = ’THE RC FROM THE PL/I CNMAUTO CALL = ’ || HLBRC;
+/********************************************************************/
+/* Respond to the operator with the return code from CNMAUTO */
+/********************************************************************/
+CNMSENDMSG
+DATA(MSGTOOP)
+MSGTYPE(’MSG’)
+DESTTYPE(’OPER ’);
+HLBRC = CNM_GOOD; /* Successful completion */</pre><hr>
+        <h4>Translating code points</h4> 
+        <pre>oints
+“Translating code points (PL/I)” shows how to translate a numeric code point
+value into its corresponding EBCDIC text.
+Translating code points (PL/I)
+/************************************************************/
+/* */
+/* Other Declarations */
+/* */
+/************************************************************/
+DCL CPDATA CHAR(80) VARYING;
+DCL DATLEN FIXED BIN(31) INIT(80);
+DCL CODE FIXED BIN(31);
+/************************************************************/
+/* Scan the input for the Code Point to translate */
+/************************************************************/
+CALL CNMSCAN (HLBPTR,
+CMDBUF,
+’%*S%D’,
+CODE);
+/************************************************************/
+/* Invoke Code Point Translation */
+/************************************************************/
+CALL CNMC2T(HLBPTR,
+CPDATA,
+DATLEN,
+’SNAALERT’,
+CODE)</pre><hr>
+        <h4>Registering applications with MS transport and operations
+management</h4>
+        <pre>t
+“Registering applications with MS transport and operations management (PL/I) ”
+shows a routine to register an application with both the MS transport and the
+operations management application.
+Registering applications with MS transport and operations
+management (PL/I)
+/******************************************************************/
+/* Declare variables for the program. */
+/******************************************************************/
+DCL MSGTOOP CHAR(80) VARYING; /* CNMSENDMSG buffer */
+DCL CMD_RETCODE FIXED BINARY(31,0); /* Return code */
+DCL ANAME CHAR(8) VARYING; /* appl name entered */
+DCL CNAME CHAR(8) VARYING; /* command name entered */
+DCL FPCATE CHAR(8) VARYING; /* focal pt category entered */
+DCL REPL CHAR(8) VARYING; /* replace value entered */
+DCL RTYPE CHAR(8) VARYING; /* registration type entered */
+DCL FP CHAR(8) VARYING; /* focal point value entered */
+DCL NOTIFY CHAR(8) VARYING; /* notify value entered */
+DCL APPLNAME CHAR(8); /* appl name used in CNMRGS */
+DCL CMDNAME CHAR(8); /* command name used in CNMRGS*/
+DCL FPCATVAL CHAR(8); /* focpt category used in RGS */
+DCL REPLACE CHAR(8); /*replace value used in CNMRGS*/
+DCL FOCPT CHAR(8); /* focal pt value used in RGS */
+DCL NOTI_VAL CHAR(8); /* notify value used in CNMRGS*/
+DCL REGTYPE CHAR(8); /* registration type */
+DCL TOKENS FIXED BINARY(31,0); /* no of input entered */
+/******************************************************************/
+/* Misc. declares - BUILT-IN functions, labels, etc. */
+/******************************************************************/
+DCL CHAR BUILTIN; /* Binary to char. function */
+DCL LENGTH BUILTIN;
+DCL SUBSTR BUILTIN;
+/******************************************************************/
+/* Initialization */
+/******************************************************************/
+APPLNAME = ’ ’;
+CMDNAME = ’ ’;
+FPCATVAL = ’ ’;
+REPLACE = ’ ’;
+REGTYPE = ’BOTH ’;
+FOCPT = ’NO ’;
+/******************************************************************/
+/* Scan input command buffer and get all parameters. */
+/******************************************************************/
+CNMSSCAN DATA(CMDBUF)
+FORMAT(’%*S’ ||
+’%S’ ||
+’%S’ ||
+’%S’ ||
+’%S’ ||
+’%S’ ||
+’%S’ ||
+’%S’)
+COUNT(TOKENS)
+P1 (ANAME) /* Parse out the appl name */
+P2 (CNAME) /* Parse out the command name */
+P3 (FPCATE) /* Parse out the FP category */
+PL/I High-Level Language Services
+92 Programming: PL/I and C
+P4 (FP ) /* Parse out the Focal Pt value */
+P5 (REPL) /* Parse out the REPLACE value */
+P6 (NOTIFY) /* Parse out the NOTIFY value */
+P7 (RTYPE ); /* Parse out the Reg. type */
+/******************************************************************/
+/* Make sure application name and command name are given */
+/******************************************************************/
+IF TOKENS < 2 THEN
+DO;
+MSGTOOP = ’APPLICATION NAME AND COMMAND NAME ARE REQUIRED’;
+CNMSENDMSG DATA (MSGTOOP)
+MSGTYPE (’MSG ’)
+DESTTYPE(’OPER ’);
+HLBRC = CNM_BAD_INVOCATION; /* registration not done */
+END;
+/******************************************************************/
+/* Save parsed value and invoke CNMREGIST service */
+/******************************************************************/
+ELSE
+DO;
+APPLNAME = ANAME; /* save appl name */
+CMDNAME = CNAME; /* save command name */
+IF LENGTH(FPCATE) > 0 & SUBSTR(FPCATE, 1, 1) ¬= ’.’ THEN
+FPCATVAL = FPCATE; /* save FP category if entered */
+IF LENGTH(FP) > 0 & SUBSTR(1, 1) ¬= ’.’ THEN
+FOCPT = FP; /* save focal pt value if enter */
+IF LENGTH(REPL) > 0 & SUBSTR(REPL,1, 1) ¬= ’.’ THEN
+REPLACE = REPL; /* save replace value if entered*/
+IF LENGTH(NOTIFY) > 0 & SUBSTR(NOTIFY, 1, 1) ¬= ’.’ THEN
+NOTI_VAL = NOTIFY; /* save notify value if entered */
+IF LENGTH(RTYPE) > 0 & SUBSTR(RTYPE, 1, 1) ¬= ’.’ THEN
+REGTYPE = RTYPE; /* save reg type if entered */
+/******************************************************************/
+/* Need to register MS appl */
+/******************************************************************/
+IF (REGTYPE = ’BOTH ’) | (REGTYPE = ’MSAPPL ’) THEN
+DO;
+CNMREGIST TYPE (REGMSAPPL)
+APPL (APPLNAME )
+COMMAND (CMDNAME)
+FPCATEGORY(FPCATVAL)
+FOCALPOINT(FOCPT)
+REPLACE (REPLACE)
+NOTIFY (NOTI_VAL);
+CMD_RETCODE = HLBRC;
+MSGTOOP = APPLNAME ||
+’ IS REGISTERED AS MS APPL, RETURN CODE IS ’ ||
+CHAR(CMD_RETCODE);
+CNMSENDMSG DATA (MSGTOOP)
+MSGTYPE (’MSG ’)
+DESTTYPE(’OPER ’);
+END;
+/******************************************************************/
+/* Need to register Ops. Mgmt. served appl */
+/******************************************************************/
+IF (REGTYPE = ’BOTH ’) | (REGTYPE = ’OMAPPL ’) THEN
+DO;
+CNMREGIST TYPE (REGOMSERVD)
+APPL (APPLNAME )
+COMMAND (CMDNAME)
+FOCALPOINT(FOCPT)
+FPCATEGORY(FPCATVAL)
+REPLACE (REPLACE)
+NOTIFY (NOTI_VAL);
+CMD_RETCODE = HLBRC;
+PL/I High-Level Language Services
+Chapter 7. PL/I high-level language services 93
+MSGTOOP = APPLNAME || ’ IS REGISTERED AS OPS ’ ||
+’MGMT SERVED APPL, RETURN CODE IS ’ ||
+CHAR(CMD_RETCODE);
+CNMSENDMSG DATA (MSGTOOP)
+MSGTYPE (’MSG ’)
+DESTTYPE(’OPER ’);
+END;
+HLBRC = CNM_GOOD; /* Successful completion */
+END;</2></pre><hr>
+        <h4>Registering applications with the high-performance transport</h4>
+        <pre>t
+“Registering applications with the high-performance transport (PL/I)” shows how
+to register an application with the high-performance transport.
+Registering applications with the high-performance transport
+(PL/I)
+/******************************************************************/
+/* Declare variables for the program. */
+/******************************************************************/
+DCL MSGTOOP CHAR(80) VARYING; /* CNMSENDMSG buffer */
+DCL CMD_RETCODE FIXED BINARY(31,0); /* Return code */
+DCL ANAME CHAR(8) VARYING; /* appl name entered */
+DCL CNAME CHAR(8) VARYING; /* command name entered */
+DCL LGMOD CHAR(8) VARYING; /* logmode entered */
+DCL REPL CHAR(8) VARYING; /* replace value entered */
+DCL RTYPE CHAR(8) VARYING; /* registration type entered */
+DCL APPLNAME CHAR(8); /* appl name used */
+DCL CMDNAME CHAR(8); /* command name used */
+DCL LOGMOD CHAR(8); /* focpt category used */
+DCL REPLACE CHAR(8); /*replace value used */
+DCL REGTYPE CHAR(8); /* registration type used */
+DCL TOKENS FIXED BINARY(31,0); /* no of input entered */
+/******************************************************************/
+/* Misc. declares - BUILT-IN functions, labels, etc. */
+/******************************************************************/
+DCL CHAR BUILTIN; /* Binary to char. function */
+DCL LENGTH BUILTIN;
+DCL SUBSTR BUILTIN;
+/******************************************************************/
+/* Initialization */
+/******************************************************************/
+APPLNAME = ’ ’;
+CMDNAME = ’ ’;
+LOGMOD = ’ ’;
+REPLACE = ’ ’;
+REGTYPE = ’REGAPPL ’;
+/******************************************************************/
+/* Scan input command buffer and get all parameters. */
+/******************************************************************/
+CNMSSCAN DATA(CMDBUF)
+FORMAT(’%*S’ ||
+’%S’ ||
+’%S’ ||
+’%S’ ||
+’%S’ ||
+’%S’)
+COUNT(TOKENS)
+P1 (ANAME) /* Parse out the appl name */
+P2 (CNAME) /* Parse out the command name */
+P3 (LNAME) /* Parse out the Logmode */
+P4 (REPL) /* Parse out the REPLACE value */
+P5 (RTYPE ); /* Parse out the Reg. type */
+/******************************************************************/
+/* Make sure application name and command name are given */
+PL/I High-Level Language Services
+94 Programming: PL/I and C
+/******************************************************************/
+IF TOKENS < 2 THEN
+DO;
+MSGTOOP = ’APPLICATION NAME AND COMMAND NAME ARE REQUIRED’;
+CNMSENDMSG DATA (MSGTOOP)
+MSGTYPE (’MSG ’)
+DESTTYPE(’OPER ’);
+HLBRC = CNM_BAD_INVOCATION; /* registration not done */
+END;
+/******************************************************************/
+/* Save parsed value and invoke CNMHRGS service */
+/******************************************************************/
+ELSE
+DO;
+APPLNAME = ANAME; /* save appl name */
+CMDNAME = CNAME; /* save command name */
+IF (LENGTH(LNAME) > 0 &
+SUBSTR(LNAME, 1, 1) ¬= ’.’) THEN
+LOGMOD = LNAME; /* save Logmode if entered */
+IF (LENGTH(REPL) > 0 &
+SUBSTR(REPL,1, 1) ¬= ’.’) THEN
+REPLACE = REPL; /* save replace value if entered*/
+IF (LENGTH(RTYPE) > 0 &
+SUBSTR(RTYPE, 1, 1) ¬= ’.’) THEN
+REGTYPE = RTYPE; /* save reg type if entered */
+/******************************************************************/
+/* Need to register an appl */
+/******************************************************************/
+IF (REGTYPE = ’REGAPPL ’) THEN
+DO;
+CNMHRGS TYPE (REGAPPL)
+APPL (APPLNAME )
+COMMAND (CMDNAME)
+LOGMODE (LOGMOD)
+REPLACE (REPLACE)
+CMD_RETCODE = HLBRC;
+MSGTOOP = APPLNAME ||
+’ IS REGISTERED AS AN APPL, RETURN CODE IS ’ ||
+CHAR(CMD_RETCODE);
+CNMSENDMSG DATA (MSGTOOP)
+MSGTYPE (’MSG ’)
+DESTTYPE(’OPER ’);
+END;
+HLBRC = CNM_GOOD; /* Successful completion */</2></pre><hr>
+        <h4>Sending an alert over the MS transport</h4>
+        <pre>t
+“Sending an alert over the MS transport (PL/I)” shows how to send a software
+alert over the MS transport.
+Sending an alert over the MS transport (PL/I)
+/******************************************************************/
+/* Declare variables for the program. */
+/******************************************************************/
+DCL CMD_RETCODE FIXED BIN(31,0); /* return code from CNMSENDMU */
+DCL MSGTOOP CHAR(80) VARYING; /* CNMSENDMSG buffer */
+DCL ALERT_MSU CHAR(256) VARYING; /* alert to be sent */
+DCL CORR_AREA CHAR(53) VARYING; /* area for correlator retn */
+DCL OAPPL CHAR(8); /* origin appl - USERAPPL */
+DCL DNET CHAR(8); /* dest net - NETA */
+DCL DLU CHAR(8); /* dest LU - CNM01 */
+DCL ALERT_NETOP CHAR(8); /* dest appl - ALERT_NETOP */
+PL/I High-Level Language Services
+Chapter 7. PL/I high-level language services 95
+/******************************************************************/
+/* Misc. declares - BUILT-IN functions, labels, etc. */
+/******************************************************************/
+DCL CHAR BUILTIN; /* Binary to char. function */
+DCL LENGTH BUILTIN;
+DCL SUBSTR BUILTIN;
+/******************************************************************/
+/* Initialization */
+/******************************************************************/
+ALERT_MSU = ’0046121200420000’X ||
+’0B92000001210100000001’X ||
+’1010000D110E0A0040F1F2F3F4F54040’X ||
+’1103030109D5C1D4C5F1404040E3E8D7F1’X ||
+’069310011023’X ||
+’0C9606011022102304813110’X;
+OAPPL = ’USERAPPL’;
+DNET = ’NETA ’;
+DLU = ’CNM01 ’;
+ALERT_NETOP = ’23F0F3F140404040’X;
+CNMSENDMU DATATYPE (NONMDSMU)
+DATA (ALERT_MSU)
+CORRELAREA (CORR_AREA)
+ORIGAPPL (OAPPL)
+DESTNET (DNET)
+DESTLU (DLU)
+DESTAPPL (ALERT_NETOP)
+MUTYPE (REQUEST_WITHOUT_REPLY);
+CMD_RETCODE = HLBRC;
+MSGTOOP = ’RETURN CODE FROM CNMSENDMU IS ’ ||
+CHAR(CMD_RETCODE);
+CNMSENDMSG DATA (MSGTOOP)
+MSGTYPE (’MSG ’)
+DESTTYPE(’OPER ’);
+HLBRC = CNM_GOOD; /* Successful completion*/</pre><hr>
+        <h4>Sending an alert over the high-performance transport</h4>
+        <pre>t
+“Sending an alert over the high-performance transport (PL/I)” shows how to send
+a software alert over the high-performance transport.
+Sending an alert over the high-performance transport (PL/I)
+/********************************************************************/
+/* NetView High-Level Language include files */
+/********************************************************************/
+%INCLUDE DSIPLI; /* Include the HLL macros */
+/********************************************************************/
+/* Parameter declarations */
+/********************************************************************/
+DCL HLBPTR PTR; /* Pointer to the HLB */
+DCL CMDBUF CHAR(*) VARYING; /* Buffer for the command */
+DCL ORIGBLCK CHAR(40); /* Area for the Origin Block */
+/******************************************************************/
+/* Declare variables for the program. */
+/******************************************************************/
+DCL CMD_RETCODE FIXED BIN(31,0); /* return code from CNMSENDMU */
+DCL MSGTOOP CHAR(80) VARYING; /* CNMSENDMSG buffer */
+DCL ALERT_MSU CHAR(256) VARYING; /* alert to be sent */
+DCL CORR_AREA CHAR(53) VARYING; /* area for correlator retn */
+DCL OAPPL CHAR(8); /* origin appl - USERAPPL */
+DCL DNET CHAR(8); /* dest net - NETA */
+PL/I High-Level Language Services
+96 Programming: PL/I and C
+DCL DLU CHAR(8); /* dest LU - CNM01 */
+DCL RMT_CMD CHAR(8); /* dest appl - RMT_CMD */
+/******************************************************************/
+/* Misc. declares - BUILT-IN functions, labels, etc. */
+/******************************************************************/
+DCL CHAR BUILTIN; /* Binary to char. function */
+DCL LENGTH BUILTIN;
+DCL SUBSTR BUILTIN;
+/******************************************************************/
+/* Initialization */
+/******************************************************************/
+ALERT_MSU = ’0046121200420000’X ||
+’0B92000001210100000001’X ||
+’1010000D110E0A0040F1F2F3F4F54040’X ||
+’1103030109D5C1D4C5F1404040E3E8D7F1’X ||
+’069310011023’X ||
+’0C9606011022102304813110’X;
+OAPPL = ’USERAPPL’;
+DNET = ’NETA ’;
+DLU = ’CNM01 ’;
+RMT_CMD = ’30F0F5F540404040’X;
+CNMHSMU DATATYPE (NONMDSMU)
+DATA (ALERT_MSU)
+CORRELAREA (CORR_AREA)
+ORIGAPPL (OAPPL)
+DESTNET (DNET)
+DESTLU (DLU)
+DESTAPPL (RMT_CMD)
+MUTYPE (REQUEST_WITHOUT_REPLY);
+CMD_RETCODE = HLBRC;
+MSGTOOP = ’RETURN CODE FROM CNMHSMU IS’ ||
+CHAR(CMD_RETCODE);
+CNMSENDMSG DATA (MSGTOOP)
+MSGTYPE (’MSG ’)
+DESTTYPE(’OPER ’);
+HLBRC = CNM_GOOD; /* Successful completion */
+END </pre><hr>
+        <h4>Sending an MDB to NetView for processing</h4>
+        <pre>g
+“Sending an MDB to NetView for processing (PL/I)” shows how to send a
+message data block (MDB) to NetView for processing.
+Sending an MDB to NetView for processing (PL/I)
+/********************************************************************/
+/* NetView High-Level Language include files */
+/********************************************************************/
+%INCLUDE DSIPLI; /* Include the HLL macros */
+/********************************************************************/
+/* Parameter declarations */
+/********************************************************************/
+DCL HLBPTR PTR; /* Pointer to the HLB */
+DCL CMDBUF CHAR(*) VARYING; /* Buffer for the command */
+DCL ORIGBLCK CHAR(40); /* Area for the Origin Block */
+/********************************************************************/
+/* Other declarations */
+/********************************************************************/
+DCL MDBPTR PTR;
+DCL SOPTR PTR;
+DCL MYCORR CHAR(16);
+DCL MYMDB CHAR(300);
+DCL MYSRC CHAR(50);
+PL/I High-Level Language Services
+Chapter 7. PL/I high-level language services 97
+DCL INFOMSG CHAR(120) VARYING;
+/********************************************************************/
+/* Create the MDB */
+/********************************************************************/
+MYMDB = ’0112’X|| /* Length of whole MDB */
+’0001’X|| /* MDB Type 1 */
+’D4C7D640’X|| /* MDB Acronym */
+’00000001’X|| /* Revision code */
+’0038’X|| /* General Object length */
+’0001’X|| /* General Object type */
+’00000000’X|| /* MDBGMID (message id) */
+’C8C84BD4D44BE2E2’X|| /* Time stamp HH.MM.SS */
+’4BE3C8’X|| /* Time stamp .TH */
+’00’X|| /* Reserved */
+’E8E8E8E8C4C4C4’X|| /* Date stamp YYYYDDD */
+’00’X|| /* Reserved */
+’0000’X|| /* MDBGMFLG (message flags) */
+’0000’X|| /* Reserved */
+’00000000’X|| /* Foreground presentation attr */
+’00000000’X|| /* Background presentation attr */
+’D6D9C9C7E2D5C1D4’X|| /* Originating system name */
+’D1D6C240D5C1D4C5’X|| /* Job name */
+’0082’X|| /* Control program object length*/
+’0002’X|| /* Control program object type */
+’00000001’X|| /* Object version level */
+’D4E5E240’X|| /* Control program name */
+’C6D4C9C4C6D4C9C4’X|| /* FMID of originating system */
+’00000000000000000000000000000000’X|| /* 128 Routing codes */
+’0000’X|| /* Descriptor codes */
+’0000’X|| /* Message level */
+’0000’X|| /* Message attribute flags */
+’0000’X|| /* Message priority */
+’0000’X|| /* Reserved */
+’0012’X|| /* ASID of issuer */
+’00000000’X|| /* JOB Step TCB for issuer */
+’00000000’X|| /* Token for DOM */
+’00’X|| /* System id for DOM */
+’00’X|| /* DOM flags */
+’00’X|| /* Misc routing information */
+’00’X|| /* Reserved */
+’0000000000000000’X|| /* Originating Job ID */
+’0000000000000000’X|| /* Retrieval KEY */
+’0000000000000000’X|| /* Automation Token */
+’0000000000000000’X|| /* Command and Response Token */
+’00000000’X|| /* Console */
+’0000’X|| /* Message type flags */
+’0077’X|| /* Reply ID length */
+’0000000000000000’X|| /* Reply ID (EBCDIC) */
+’0000’X|| /* Reserved */
+’0000’X|| /* Offset to beginning of msg */
+’00000000’X|| /* Reply ID (binary) */
+’00’X|| /* Areaid */
+’00’X|| /* Reserved */
+’00000001’X|| /* Number of lines in message */
+’0000000000000000’X|| /* Originating Job name */
+’004C’X|| /* Text object length */
+’0004’X|| /* Text object type */
+’0000’X|| /* Line type flags */
+’00000000’X|| /* Presentation attributes */
+’78E3C8C9E240’X|| /* Text of message: "THIS " */
+’D4C5E2E2C1C7C540’X|| /* "MESSAGE " */
+’E6C1E240E2C5D5E340’X|| /* "WAS SENT " */
+’C6D9D6D440D7D361C940’X|| /* "FROM PL/I " */
+’E4E2C9D5C740E3C8C540’X|| /* "USING THE " */
+’D5C5E3E5C9C5E640’X|| /* "NETVIEW " */
+’C3D5D4D7D4C4C240’X|| /* "CNMPMDB " */
+’E2C5D9E5C9C3C5’X; /* "SERVICE " */
+PL/I High-Level Language Services
+98 Programming: PL/I and C
+/********************************************************************/
+/* Create the Source Object */
+/********************************************************************/
+MYSRC = ’000B’X|| /* Source object length */
+’0005’X|| /* Source object type */
+’07D5D4E8E2E8E2’X; /* Nickname "MYSYS" */
+/********************************************************************/
+/* Initialize the Correlator value */
+/********************************************************************/
+MYCORR = ’00000000000000000000000000000000’X;
+/********************************************************************/
+/* Set up pointers to MDB and Source Object */
+/********************************************************************/
+MDBPTR = ADDR(MYMDB);
+SOPTR = ADDR(MYSRC);
+/********************************************************************/
+/* Call CNMPMDB service to process the MDB */
+/********************************************************************/
+CALL CNMPMDB(HLBPTR,MDBPTR,SOPTR,MYCORR);
+/********************************************************************/
+/* Send message to issuer with return code from CNMPMDB */
+/********************************************************************/
+INFOMSG = ’RETURN CODE FROM CNMPMDB: ’ || HLBPTR->HLBRC;
+CALL CNMSMSG(HLBPTR,INFOMSG,’MSG’,’OPER’,’’);
+HLBPTR->HLBRC = CNM_GOOD; /* Successful completion */
+END PPRSMDB;
+PL/I High-Level Language Services
+Chapter 7. PL/I high-level language services 99
+PL/I High-Level Language Services</pre>
+    </pre>
+    </body>
+
+</html>   
+    
+    
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
